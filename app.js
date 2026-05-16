@@ -8,66 +8,47 @@ const configSources = consoleData.configSources || [];
 const profiles = consoleData.profiles || [];
 const chats = consoleData.chats || [];
 const connectors = consoleData.connectors || [];
-const adminConsole = consoleData.adminConsole || {};
-const adminConnectorProfiles = adminConsole.connectorProfiles || [];
-const adminSections = adminConsole.sections || [];
 const providers = consoleData.providers || [];
 const policies = consoleData.policies || [];
 const secretBindings = consoleData.secretBindings || [];
-const playbooks = consoleData.playbooks || [];
-const routingMatrix = consoleData.routingMatrix || [];
-const workflowBindings = consoleData.workflowBindings || [];
-const chainGraph = consoleData.chainGraph || [];
 const liveRuns = consoleData.liveRuns || [];
 const decisionTrace = consoleData.decisionTrace || [];
 const failureHeatmap = consoleData.failureHeatmap || [];
 
 const globalSearchInput = document.querySelector(".global-search input");
-const historyList = document.getElementById("historyList");
-const templateList = document.getElementById("templateList");
-const overviewStrip = document.getElementById("overviewStrip");
 const workspaceKicker = document.getElementById("workspaceKicker");
 const chatTitle = document.getElementById("chatTitle");
 const chatMeta = document.getElementById("chatMeta");
+const overviewStrip = document.getElementById("overviewStrip");
+
+const historyList = document.getElementById("historyList");
+const templateList = document.getElementById("templateList");
+
+const setupSourceValue = document.getElementById("setupSourceValue");
+const setupFlowValue = document.getElementById("setupFlowValue");
+const setupPublishValue = document.getElementById("setupPublishValue");
+const setupIntroList = document.getElementById("setupIntroList");
+const setupFocus = document.getElementById("setupFocus");
+const setupSourceCatalog = document.getElementById("setupSourceCatalog");
+const workTypeRegistry = document.getElementById("workTypeRegistry");
+const setupChecklistList = document.getElementById("setupChecklistList");
+const setupConfigList = document.getElementById("setupConfigList");
 
 const profileValue = document.getElementById("profileValue");
 const sourceValue = document.getElementById("sourceValue");
 const stageValue = document.getElementById("stageValue");
 const nextActionValue = document.getElementById("nextActionValue");
-
+const insightGrid = document.getElementById("insightGrid");
 const runSummaryList = document.getElementById("runSummaryList");
 const runDependencyList = document.getElementById("runDependencyList");
-const insightGrid = document.getElementById("insightGrid");
 const timelineList = document.getElementById("timelineList");
-const runDecisionTrace = document.getElementById("runDecisionTrace");
 const messageStream = document.getElementById("messageStream");
-
-const workTypeRegistry = document.getElementById("workTypeRegistry");
-const workTypeFocus = document.getElementById("workTypeFocus");
-const workTypeRouting = document.getElementById("workTypeRouting");
-const workTypePlaybooks = document.getElementById("workTypePlaybooks");
-const onboardingList = document.getElementById("onboardingList");
-const configSourceList = document.getElementById("configSourceList");
-const publishChecklist = document.getElementById("publishChecklist");
-
-const adminConnectorCatalog = document.getElementById("adminConnectorCatalog");
-const adminConnectorSummary = document.getElementById("adminConnectorSummary");
-const runtimeModeSelector = document.getElementById("runtimeModeSelector");
-const mcpFabricList = document.getElementById("mcpFabricList");
-const toolMappingList = document.getElementById("toolMappingList");
-const adminEnvBindings = document.getElementById("adminEnvBindings");
-const writebackPolicyList = document.getElementById("writebackPolicyList");
-const adminSpecList = document.getElementById("adminSpecList");
-
-const playbookRegistry = document.getElementById("playbookRegistry");
-const routingMatrixList = document.getElementById("routingMatrix");
-const workflowBindingsList = document.getElementById("workflowBindings");
-const chainGraphList = document.getElementById("chainGraph");
 
 const runBoard = document.getElementById("runBoard");
 const decisionTraceList = document.getElementById("decisionTrace");
 const failureHeatmapList = document.getElementById("failureHeatmap");
 
+const helpGlossary = document.getElementById("helpGlossary");
 const connectorList = document.getElementById("connectorList");
 const connectorFocus = document.getElementById("connectorFocus");
 const providerGrid = document.getElementById("providerGrid");
@@ -84,54 +65,37 @@ const newRunButton = document.getElementById("newRunButton");
 const connectSourceAdapterButton = document.getElementById("connectSourceAdapterButton");
 const switchWorkTypeButton = document.getElementById("switchWorkTypeButton");
 const contextDiagnosticsButton = document.getElementById("contextDiagnosticsButton");
-const openBuildConnectorsButton = document.getElementById("openBuildConnectorsButton");
 
-const operateShortcut = document.getElementById("operateShortcut");
-const buildShortcut = document.getElementById("buildShortcut");
-const observabilityShortcut = document.getElementById("observabilityShortcut");
+const setupShortcut = document.getElementById("setupShortcut");
+const runsShortcut = document.getElementById("runsShortcut");
+const monitorShortcut = document.getElementById("monitorShortcut");
 const workspaceTabs = Array.from(document.querySelectorAll(".workspace-tab"));
-const operateSubviewTabs = Array.from(document.querySelectorAll(".subview-tab[data-operate-view]"));
-const buildSubviewTabs = Array.from(document.querySelectorAll(".subview-tab[data-build-view]"));
-const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
 
 const historyToggle = document.getElementById("historyToggle");
 const connectorToggle = document.getElementById("connectorToggle");
 const historyPanel = document.getElementById("historyPanel");
 const connectorPanel = document.getElementById("connectorPanel");
+const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
 
 const workspacePanels = {
-  operate: document.getElementById("operatePanel"),
-  build: document.getElementById("buildPanel"),
-  observability: document.getElementById("observabilityPanel"),
+  setup: document.getElementById("setupPanel"),
+  runs: document.getElementById("runsPanel"),
+  monitor: document.getElementById("monitorPanel"),
 };
 
-const operateSubPanels = {
-  overview: document.getElementById("operateOverviewPanel"),
-  timeline: document.getElementById("operateTimelinePanel"),
-  thread: document.getElementById("operateThreadPanel"),
-};
-
-const buildSubPanels = {
-  workTypes: document.getElementById("buildWorkTypesPanel"),
-  connectors: document.getElementById("buildConnectorsPanel"),
-  publish: document.getElementById("buildPublishPanel"),
-};
-
+let activeWorkspaceView = "setup";
 let activeRunId = liveRuns[0]?.id || "";
 let activeWorkTypeId = workTypes[0]?.id || "";
 let activeConnectorId = connectors[0]?.id || "";
 let activeFilter = "all";
-let activeWorkspaceView = "operate";
-let activeOperateView = "overview";
-let activeBuildView = "workTypes";
 let searchTerm = "";
 
-const runtimeModeSelections = Object.fromEntries(
-  adminConnectorProfiles.map((profile) => [
-    profile.id,
-    profile.activeRuntimeMode || profile.runtimeModes?.[0]?.id || "",
-  ])
-);
+const simpleGlossary = [
+  { title: "Source system", detail: "Where work comes from, such as ServiceNow or GitHub." },
+  { title: "Flow", detail: "A reusable automation template for one type of work." },
+  { title: "Run", detail: "One execution of a flow." },
+  { title: "Run thread", detail: "Troubleshooting notes for a run." },
+];
 
 function searchable(values) {
   return values.filter(Boolean).join(" ").toLowerCase();
@@ -144,12 +108,8 @@ function matchesSearch(values) {
 
 function connectorStatusClass(status) {
   const normalized = String(status || "").toLowerCase();
-  if (normalized === "live" || normalized === "active" || normalized === "running" || normalized === "online") {
-    return "live";
-  }
-  if (normalized === "waiting" || normalized === "chained" || normalized === "shared") {
-    return "pending";
-  }
+  if (["live", "active", "running", "online"].includes(normalized)) return "live";
+  if (["waiting", "chained", "shared"].includes(normalized)) return "pending";
   return "staged";
 }
 
@@ -171,7 +131,7 @@ function formatList(value, separator = ", ") {
 }
 
 function workTypeById(id) {
-  return workTypes.find((workType) => workType.id === id) || null;
+  return workTypes.find((item) => item.id === id) || null;
 }
 
 function profileForWorkType(workType) {
@@ -193,43 +153,26 @@ function activeWorkType() {
   return workTypeById(activeWorkTypeId) || workTypes[0] || null;
 }
 
-function playbooksForWorkType(workType) {
-  return playbooks.filter((playbook) => (workType?.playbooks || []).includes(playbook.id));
-}
-
-function connectorsForWorkType(workType) {
-  return connectors.filter((connector) => (workType?.connectorIds || []).includes(connector.id));
-}
-
-function activeConnectorProfile(visibleProfiles = adminConnectorProfiles) {
-  return visibleProfiles.find((profile) => profile.id === activeConnectorId) || visibleProfiles[0] || null;
-}
-
-function currentRuntimeMode(profile) {
-  if (!profile) return null;
-  const selectedId = runtimeModeSelections[profile.id] || profile.activeRuntimeMode || profile.runtimeModes?.[0]?.id;
-  return (profile.runtimeModes || []).find((mode) => mode.id === selectedId) || profile.runtimeModes?.[0] || null;
+function activeConnector() {
+  return connectors.find((connector) => connector.id === activeConnectorId) || connectors[0] || null;
 }
 
 function visibleRuns() {
   return liveRuns.filter((run) => {
-    const status = String(run.status || "").toLowerCase();
+    const normalized = String(run.status || "").toLowerCase();
     const filterMatch = (
       activeFilter === "all" ||
-      (activeFilter === "running" && status === "running") ||
-      (activeFilter === "waiting" && (status === "waiting" || status === "chained"))
+      (activeFilter === "running" && normalized === "running") ||
+      (activeFilter === "waiting" && (normalized === "waiting" || normalized === "chained"))
     );
-
     const workType = workTypeById(run.workTypeId);
-
     return filterMatch && matchesSearch([
       run.id,
-      run.status,
-      run.playbook,
-      run.stage,
       run.source,
-      run.owner,
+      run.stage,
+      run.status,
       run.next,
+      run.owner,
       workType?.name,
     ]);
   });
@@ -241,7 +184,6 @@ function visibleTemplates() {
     template.meta,
     template.profile,
     template.prompt,
-    template.sourceGraph,
   ]));
 }
 
@@ -249,72 +191,36 @@ function visibleWorkTypes() {
   return workTypes.filter((workType) => matchesSearch([
     workType.name,
     workType.summary,
-    workType.defaultRunMode,
+    workType.publishState,
     workType.approvalPosture,
     ...(workType.routingSignals || []),
-    ...(workType.playbooks || []),
   ]));
 }
 
-function visiblePlaybooks() {
-  const selectedWorkType = activeWorkType();
-  const allowedPlaybooks = new Set(selectedWorkType?.playbooks || []);
-
-  return playbooks.filter((playbook) => {
-    const workTypeMatch = activeBuildView !== "playbooks" || !selectedWorkType || allowedPlaybooks.size === 0 || allowedPlaybooks.has(playbook.id) || String(playbook.workload).toLowerCase() === "shared";
-    return workTypeMatch && matchesSearch([
-      playbook.name,
-      playbook.workload,
-      playbook.status,
-      playbook.owner,
-      ...(playbook.stages || []),
-      ...(playbook.gates || []),
-      ...(playbook.chains || []),
-    ]);
-  });
-}
-
-function visibleRoutes() {
-  const selectedProfile = profileForWorkType(activeWorkType());
-  return routingMatrix.filter((route) => {
-    const profileMatch = !selectedProfile || String(route.workload || "").toLowerCase() === String(selectedProfile.name || "").toLowerCase();
-    return profileMatch && matchesSearch([route.workload, route.signals, route.playbook, route.fallback]);
-  });
-}
-
-function visibleAdminConnectorProfiles() {
-  return adminConnectorProfiles.filter((profile) => matchesSearch([
-    profile.name,
-    profile.category,
-    profile.summary,
-    ...(profile.tags || []),
-    profile.connectorFile,
-    profile.sourceConfig,
-    profile.contractFile,
+function visibleConnectors() {
+  return connectors.filter((connector) => matchesSearch([
+    connector.name,
+    connector.detail,
+    connector.mode,
+    connector.meta,
   ]));
 }
 
-function ensureActiveRunVisible() {
+function ensureSelections() {
   const runs = visibleRuns();
-  if (!runs.length) {
-    activeRunId = "";
-    return;
-  }
-
-  if (!runs.some((run) => run.id === activeRunId)) {
+  if (runs.length && !runs.some((run) => run.id === activeRunId)) {
     activeRunId = runs[0].id;
   }
-}
 
-function ensureActiveWorkTypeVisible() {
-  const visible = visibleWorkTypes();
-  if (!visible.length) {
-    activeWorkTypeId = "";
-    return;
+  const workType = activeRun()?.workTypeId ? workTypeById(activeRun().workTypeId) : null;
+  if (workType && !searchTerm) {
+    activeWorkTypeId = workType.id;
+  } else if (!visibleWorkTypes().some((item) => item.id === activeWorkTypeId) && visibleWorkTypes()[0]) {
+    activeWorkTypeId = visibleWorkTypes()[0].id;
   }
 
-  if (!visible.some((workType) => workType.id === activeWorkTypeId)) {
-    activeWorkTypeId = visible[0].id;
+  if (!visibleConnectors().some((item) => item.id === activeConnectorId) && visibleConnectors()[0]) {
+    activeConnectorId = visibleConnectors()[0].id;
   }
 }
 
@@ -327,20 +233,37 @@ function setWorkspaceView(view) {
   renderHeader();
 }
 
-function setOperateView(view) {
-  activeOperateView = view;
-  Object.entries(operateSubPanels).forEach(([key, panel]) => {
-    if (panel) panel.hidden = key !== view;
-  });
-  operateSubviewTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.operateView === view));
-}
+function renderHeader() {
+  if (activeWorkspaceView === "setup") {
+    const workType = activeWorkType();
+    const connector = activeConnector();
+    workspaceKicker.textContent = "Start here";
+    chatTitle.textContent = "Set up a new automation flow";
+    chatMeta.innerHTML = [
+      connector?.name ? `Source: ${connector.name}` : "",
+      workType?.name ? `Flow: ${workType.name}` : "",
+      workType?.publishState ? `Status: ${workType.publishState}` : "",
+    ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
+    return;
+  }
 
-function setBuildView(view) {
-  activeBuildView = view;
-  Object.entries(buildSubPanels).forEach(([key, panel]) => {
-    if (panel) panel.hidden = key !== view;
-  });
-  buildSubviewTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.buildView === view));
+  if (activeWorkspaceView === "monitor") {
+    workspaceKicker.textContent = "Live status";
+    chatTitle.textContent = "Monitor automation health";
+    chatMeta.innerHTML = "<span>See active runs, routing reasons, and problems that need attention.</span>";
+    return;
+  }
+
+  const run = activeRun();
+  const workType = workTypeById(run?.workTypeId);
+  workspaceKicker.textContent = "Selected run";
+  chatTitle.textContent = run ? `${run.id} · ${run.source}` : "No run selected";
+  chatMeta.innerHTML = [
+    workType?.name,
+    run?.status ? `Status: ${run.status}` : "",
+    run?.owner ? `Owner: ${run.owner}` : "",
+    run?.approval ? run.approval : "",
+  ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
 }
 
 function renderOverviewStrip() {
@@ -357,46 +280,9 @@ function renderOverviewStrip() {
   });
 }
 
-function renderHeader() {
-  if (activeWorkspaceView === "build") {
-    const workType = activeWorkType();
-    const profile = profileForWorkType(workType);
-    workspaceKicker.textContent = "Selected work type";
-    chatTitle.textContent = workType?.name || "Build";
-    chatMeta.innerHTML = [
-      workType?.status,
-      profile?.name ? `Profile: ${profile.name}` : "",
-      workType?.publishState ? `Publish state: ${workType.publishState}` : "",
-      workType?.approvalPosture ? `Approval: ${workType.approvalPosture}` : "",
-    ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
-    return;
-  }
-
-  if (activeWorkspaceView === "observability") {
-    workspaceKicker.textContent = "Control plane health";
-    chatTitle.textContent = "Health";
-    chatMeta.innerHTML = "<span>Runs, routing, and failure hotspots across environments</span>";
-    return;
-  }
-
-  const run = activeRun();
-  const workType = workTypeById(run?.workTypeId);
-  workspaceKicker.textContent = "Selected run";
-  chatTitle.textContent = run ? `${run.id} · ${run.source}` : "No run selected";
-  chatMeta.innerHTML = [
-    workType?.name,
-    run?.status ? `Status: ${run.status}` : "",
-    run?.owner ? `Owner: ${run.owner}` : "",
-    run?.approval ? run.approval : "",
-  ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
-}
-
 function renderRunRail() {
   historyList.innerHTML = "";
-  ensureActiveRunVisible();
-  const runs = visibleRuns();
-
-  runs.forEach((run) => {
+  visibleRuns().forEach((run) => {
     const button = document.createElement("button");
     button.className = `history-item${run.id === activeRunId ? " active" : ""}`;
     button.type = "button";
@@ -410,19 +296,17 @@ function renderRunRail() {
         <span class="history-item-stage">${run.stage}</span>
       </div>
     `;
-
     button.addEventListener("click", () => {
       activeRunId = run.id;
       activeWorkTypeId = run.workTypeId || activeWorkTypeId;
-      setWorkspaceView("operate");
+      setWorkspaceView("runs");
       renderAll();
       closePanelsOnMobile();
     });
-
     historyList.appendChild(button);
   });
 
-  if (!runs.length) {
+  if (!historyList.children.length) {
     historyList.innerHTML = '<div class="history-empty">No runs match the current search or filter.</div>';
   }
 }
@@ -445,41 +329,175 @@ function renderTemplates() {
   });
 
   if (!templateList.children.length) {
-    templateList.innerHTML = '<div class="history-empty">No starter flows match the current search.</div>';
+    templateList.innerHTML = '<div class="history-empty">No starter examples match the current search.</div>';
   }
 }
 
-function renderRunBanner() {
-  const run = activeRun();
-  const workType = workTypeById(run?.workTypeId);
-  profileValue.textContent = workType?.name || "Unknown";
-  sourceValue.textContent = run?.source || "Awaiting source";
-  stageValue.textContent = run?.stage || "Idle";
-  nextActionValue.textContent = run?.next || "Select a run";
+function renderSetup() {
+  const connector = activeConnector();
+  const workType = activeWorkType();
+  const profile = profileForWorkType(workType);
+
+  setupSourceValue.textContent = connector?.name || "Choose a source";
+  setupFlowValue.textContent = workType?.name || "Choose a flow";
+  setupPublishValue.textContent = workType?.publishState || "Draft";
+
+  setupIntroList.innerHTML = "";
+  simpleGlossary.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${item.title}</div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    setupIntroList.appendChild(row);
+  });
+
+  setupFocus.innerHTML = `
+    <div class="focus-kicker">Selected setup</div>
+    <div class="focus-title-row">
+      <h3 class="focus-title">${workType?.name || "Choose a flow"}</h3>
+      <span class="connector-status ${connectorStatusClass(workType?.status)}">${workType?.status || "DRAFT"}</span>
+    </div>
+    <div class="focus-meta">${workType?.summary || "Pick a source and a flow template to begin."}</div>
+    <div class="focus-stats">
+      <div class="focus-stat">
+        <span>Source</span>
+        <strong>${connector?.name || "n/a"}</strong>
+      </div>
+      <div class="focus-stat">
+        <span>Profile</span>
+        <strong>${profile?.name || "n/a"}</strong>
+      </div>
+    </div>
+    <div class="focus-section">
+      <div class="focus-section-title">Main steps</div>
+      <div class="focus-list">
+        ${(workType?.playbooks || []).map((item) => `<div class="focus-list-item">${item}</div>`).join("")}
+      </div>
+    </div>
+    <div class="focus-section">
+      <div class="focus-section-title">Approval</div>
+      <div class="focus-meta">${workType?.approvalPosture || "n/a"}</div>
+    </div>
+  `;
+
+  setupSourceCatalog.innerHTML = "";
+  visibleConnectors().forEach((item) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `playbook-row${item.id === activeConnectorId ? " active-card" : ""}`;
+    card.innerHTML = `
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${item.name}</div>
+          <div class="playbook-meta">${item.mode}</div>
+        </div>
+        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
+      </div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    card.addEventListener("click", () => {
+      activeConnectorId = item.id;
+      renderSetup();
+      renderHelpPanel();
+    });
+    setupSourceCatalog.appendChild(card);
+  });
+
+  workTypeRegistry.innerHTML = "";
+  visibleWorkTypes().forEach((item) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `playbook-row${item.id === activeWorkTypeId ? " active-card" : ""}`;
+    card.innerHTML = `
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${item.name}</div>
+          <div class="playbook-meta">${item.defaultRunMode}</div>
+        </div>
+        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
+      </div>
+      <div class="playbook-detail">${item.summary}</div>
+    `;
+    card.addEventListener("click", () => {
+      activeWorkTypeId = item.id;
+      renderSetup();
+    });
+    workTypeRegistry.appendChild(card);
+  });
+
+  setupChecklistList.innerHTML = "";
+  onboardingWorkflow.slice(0, 5).forEach((item, index) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${index + 1}. ${item.step}</div>
+          <div class="playbook-meta">${item.owner}</div>
+        </div>
+        <span class="focus-chip">Do this</span>
+      </div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    setupChecklistList.appendChild(row);
+  });
+  [
+    { label: "Dry-run with sample item", detail: "Test the flow before allowing real writeback." },
+    { label: "Review writeback safety", detail: workType?.approvalPosture || "Check which updates are allowed." },
+  ].forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${item.label}</div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    setupChecklistList.appendChild(row);
+  });
+
+  setupConfigList.innerHTML = "";
+  [...configSources, ...secretBindings.map((item) => ({
+    label: item.label,
+    detail: item.detail,
+  }))].forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${item.label}</div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    setupConfigList.appendChild(row);
+  });
 }
 
-function renderOperateOverview() {
+function renderRuns() {
   const run = activeRun();
   const thread = activeThread();
   const workType = workTypeById(run?.workTypeId);
 
+  profileValue.textContent = workType?.name || "Unknown flow";
+  sourceValue.textContent = run?.source || "No source";
+  stageValue.textContent = run?.stage || "Idle";
+  nextActionValue.textContent = run?.next || "Select a run";
+
   insightGrid.innerHTML = "";
-  (thread?.insights || []).forEach((insight) => {
+  (thread?.insights || []).forEach((item) => {
     const card = document.createElement("div");
-    card.className = `insight-card ${insightToneClass(insight.tone)}`;
+    card.className = `insight-card ${insightToneClass(item.tone)}`;
     card.innerHTML = `
-      <div class="insight-label">${insight.label}</div>
-      <div class="insight-value">${insight.value}</div>
+      <div class="insight-label">${item.label}</div>
+      <div class="insight-value">${item.value}</div>
     `;
     insightGrid.appendChild(card);
   });
 
   runSummaryList.innerHTML = "";
   [
-    ["Work type", workType?.name || "n/a"],
-    ["Current playbook", run?.playbook || "n/a"],
-    ["Stage", run?.stage || "n/a"],
-    ["Approval posture", run?.approval || "n/a"],
+    ["Run", run?.id || "n/a"],
+    ["Owner", run?.owner || "n/a"],
+    ["Current step", run?.stage || "n/a"],
+    ["Approval", run?.approval || "n/a"],
     ["Risk", run?.risk || "n/a"],
     ["Next action", run?.next || "n/a"],
   ].forEach(([label, value]) => {
@@ -491,80 +509,37 @@ function renderOperateOverview() {
 
   runDependencyList.innerHTML = "";
   [
-    `Trigger: ${run?.trigger || "n/a"}`,
-    `Connectors: ${formatList(run?.connectors || [])}`,
+    `Flow chosen: ${workType?.name || "n/a"}`,
+    `Triggered by: ${run?.trigger || "n/a"}`,
+    `Source systems: ${formatList(run?.connectors || [])}`,
     `Outputs: ${formatList(run?.outputs || [])}`,
-    `Approval: ${run?.approval || "n/a"}`,
     `Summary: ${run?.summary || "n/a"}`,
   ].forEach((text) => {
-    const item = document.createElement("div");
-    item.className = "focus-list-item";
-    item.textContent = text;
-    runDependencyList.appendChild(item);
+    const row = document.createElement("div");
+    row.className = "focus-list-item";
+    row.textContent = text;
+    runDependencyList.appendChild(row);
   });
-}
-
-function renderOperateTimeline() {
-  const thread = activeThread();
-  const run = activeRun();
 
   timelineList.innerHTML = "";
-  (thread?.timeline || []).forEach((entry) => {
-    const item = document.createElement("div");
-    item.className = `timeline-item ${timelineStateClass(entry.state)}`;
-    item.innerHTML = `
+  (thread?.timeline || []).forEach((item) => {
+    const row = document.createElement("div");
+    row.className = `timeline-item ${timelineStateClass(item.state)}`;
+    row.innerHTML = `
       <div class="timeline-marker"></div>
       <div class="timeline-copy">
         <div class="timeline-stage-row">
-          <div class="timeline-stage">${entry.stage}</div>
-          <div class="timeline-state">${entry.state}</div>
+          <div class="timeline-stage">${item.stage}</div>
+          <div class="timeline-state">${item.state}</div>
         </div>
-        <div class="timeline-summary">${entry.summary}</div>
+        <div class="timeline-summary">${item.summary}</div>
       </div>
     `;
-    timelineList.appendChild(item);
+    timelineList.appendChild(row);
   });
 
-  if (!timelineList.children.length) {
-    timelineList.innerHTML = '<div class="history-empty">No timeline available for this run.</div>';
-  }
-
-  runDecisionTrace.innerHTML = "";
-  const traceMatches = decisionTrace.filter((trace) => {
-    const runRef = run?.source?.split("/").pop()?.trim() || "";
-    return matchesSearch([trace.title, ...(trace.details || [])]) && (
-      trace.title.includes(runRef) ||
-      trace.title.includes(run?.playbook || "") ||
-      trace.title.toLowerCase().includes(String(workTypeById(run?.workTypeId)?.profileId || "").toLowerCase())
-    );
-  });
-
-  (traceMatches.length ? traceMatches : decisionTrace.slice(0, 1)).forEach((trace) => {
-    const block = document.createElement("div");
-    block.className = "route-row";
-    block.innerHTML = `
-      <div class="playbook-name">${trace.title}</div>
-      <div class="focus-list">
-        ${(trace.details || []).map((detail) => `<div class="focus-list-item">${detail}</div>`).join("")}
-      </div>
-    `;
-    runDecisionTrace.appendChild(block);
-  });
-}
-
-function renderOperateThread() {
-  const thread = activeThread();
-  const run = activeRun();
-
-  if (!thread) {
-    messageStream.innerHTML = '<div class="history-empty">No troubleshooting thread available for this run.</div>';
-    return;
-  }
-
-  composerInput.value = `Review ${run?.id || "this run"}, summarize the blocker, and recommend the safest next move before any mutation.`;
   messageStream.innerHTML = "";
-
-  thread.messages.forEach((message) => {
+  (thread?.messages || []).forEach((message) => {
     const article = document.createElement("article");
     article.className = `message ${message.role}`;
     article.innerHTML = `
@@ -583,510 +558,10 @@ function renderOperateThread() {
   });
 }
 
-function renderWorkTypes() {
-  ensureActiveWorkTypeVisible();
-  const selectedWorkType = activeWorkType();
-  const selectedProfile = profileForWorkType(selectedWorkType);
-
-  workTypeRegistry.innerHTML = "";
-  visibleWorkTypes().forEach((workType) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `playbook-row${workType.id === activeWorkTypeId ? " active-card" : ""}`;
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${workType.name}</div>
-          <div class="playbook-meta">${workType.defaultRunMode} • ${workType.publishState}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(workType.status)}">${workType.status}</span>
-      </div>
-      <div class="playbook-detail">${workType.summary}</div>
-    `;
-    card.addEventListener("click", () => {
-      activeWorkTypeId = workType.id;
-      activeConnectorId = workType.connectorIds?.[0] || activeConnectorId;
-      renderAll();
-    });
-    workTypeRegistry.appendChild(card);
-  });
-
-  if (!workTypeRegistry.children.length) {
-    workTypeRegistry.innerHTML = '<div class="history-empty">No work types match the current search.</div>';
-  }
-
-  if (!selectedWorkType) {
-    workTypeFocus.innerHTML = '<div class="history-empty">No work type selected.</div>';
-    workTypeRouting.innerHTML = '<div class="history-empty">No routing info available.</div>';
-    workTypePlaybooks.innerHTML = '<div class="history-empty">No playbooks available.</div>';
-    return;
-  }
-
-  workTypeFocus.innerHTML = `
-    <div class="focus-kicker">Selected work type</div>
-    <div class="focus-title-row">
-      <h3 class="focus-title">${selectedWorkType.name}</h3>
-      <span class="connector-status ${connectorStatusClass(selectedWorkType.status)}">${selectedWorkType.status}</span>
-    </div>
-    <div class="focus-meta">${selectedWorkType.summary}</div>
-    <div class="focus-stats">
-      <div class="focus-stat">
-        <span>Profile</span>
-        <strong>${selectedProfile?.name || "n/a"}</strong>
-      </div>
-      <div class="focus-stat">
-        <span>Publish state</span>
-        <strong>${selectedWorkType.publishState}</strong>
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Connectors</div>
-      <div class="focus-chip-row">
-        ${connectorsForWorkType(selectedWorkType).map((connector) => `<span class="focus-chip">${connector.name}</span>`).join("")}
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Outputs</div>
-      <div class="focus-list">
-        ${(selectedWorkType.outputs || []).map((output) => `<div class="focus-list-item">${output}</div>`).join("")}
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Approval posture</div>
-      <div class="focus-meta">${selectedWorkType.approvalPosture}</div>
-    </div>
-  `;
-
-  workTypeRouting.innerHTML = "";
-  [
-    ...visibleRoutes().map((route) => ({
-      title: route.workload,
-      meta: route.signals,
-      detail: `Default playbook: ${route.playbook} • Fallback: ${route.fallback} • Confidence: ${route.confidence}`,
-    })),
-    ...(visibleRoutes().length ? [] : [{
-      title: "Signals",
-      meta: formatList(selectedWorkType.routingSignals || []),
-      detail: "This work type uses explicit routing signals defined in the control plane.",
-    }]),
-  ].forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = "route-row";
-    row.innerHTML = `
-      <div class="route-main">
-        <div class="playbook-name">${entry.title}</div>
-        <div class="route-meta">${entry.meta}</div>
-      </div>
-      <div class="playbook-detail">${entry.detail}</div>
-    `;
-    workTypeRouting.appendChild(row);
-  });
-
-  workTypePlaybooks.innerHTML = "";
-  (selectedWorkType.playbooks || []).forEach((playbookId) => {
-    const matchingPlaybook = playbooks.find((playbook) => playbook.id === playbookId);
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${matchingPlaybook?.name || playbookId}</div>
-          <div class="playbook-meta">${matchingPlaybook?.owner || "Configured chain node"}</div>
-        </div>
-        <span class="focus-chip">${matchingPlaybook?.status || "CHAIN"}</span>
-      </div>
-      <div class="playbook-detail">${matchingPlaybook ? matchingPlaybook.stages.join(" -> ") : "Defined in the selected work type chain."}</div>
-    `;
-    workTypePlaybooks.appendChild(row);
-  });
-}
-
-function renderOnboarding() {
-  onboardingList.innerHTML = "";
-  onboardingWorkflow.forEach((step, index) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${index + 1}. ${step.step}</div>
-          <div class="playbook-meta">${step.owner}</div>
-        </div>
-        <span class="focus-chip">Required</span>
-      </div>
-      <div class="playbook-detail">${step.detail}</div>
-    `;
-    onboardingList.appendChild(row);
-  });
-
-  configSourceList.innerHTML = "";
-  [...configSources, ...secretBindings.map((binding) => ({
-    label: binding.label,
-    detail: binding.detail,
-  }))].forEach((source) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${source.label}</div>
-      <div class="playbook-detail">${source.detail}</div>
-    `;
-    configSourceList.appendChild(row);
-  });
-
-  const workType = activeWorkType();
-  publishChecklist.innerHTML = "";
-  [
-    { label: "Dry-run with sample item", value: "Required" },
-    { label: "Schema mapped", value: "Required" },
-    { label: "Writeback reviewed", value: workType?.approvalPosture || "Required" },
-    { label: "Publish state", value: workType?.publishState || "Draft" },
-    { label: "Secrets ready", value: "Repo, runner, or runtime-injected" },
-  ].forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
-    publishChecklist.appendChild(row);
-  });
-}
-
-function renderAdminConnectorCatalog() {
-  adminConnectorCatalog.innerHTML = "";
-  const visibleProfiles = visibleAdminConnectorProfiles();
-
-  if (!visibleProfiles.some((profile) => profile.id === activeConnectorId) && visibleProfiles[0]) {
-    activeConnectorId = visibleProfiles[0].id;
-  }
-
-  visibleProfiles.forEach((profile) => {
-    const mode = currentRuntimeMode(profile);
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `playbook-row${profile.id === activeConnectorId ? " active-card" : ""}`;
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${profile.name}</div>
-          <div class="playbook-meta">${profile.category} • ${mode?.label || "Runtime pending"}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(profile.status)}">${profile.status}</span>
-      </div>
-      <div class="playbook-detail">${profile.summary}</div>
-      <div class="playbook-chip-row">
-        ${(profile.tags || []).map((tag) => `<span class="focus-chip">${tag}</span>`).join("")}
-      </div>
-    `;
-    card.addEventListener("click", () => {
-      activeConnectorId = profile.id;
-      renderBuildConnectors();
-      renderInspector();
-    });
-    adminConnectorCatalog.appendChild(card);
-  });
-
-  if (!visibleProfiles.length) {
-    adminConnectorCatalog.innerHTML = '<div class="history-empty">No connector profiles match the current search.</div>';
-  }
-}
-
-function renderAdminConnectorSummary() {
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    adminConnectorSummary.innerHTML = '<div class="history-empty">No connector selected.</div>';
-    return;
-  }
-
-  const mode = currentRuntimeMode(profile);
-  adminConnectorSummary.innerHTML = `
-    <div class="focus-kicker">Selected connector</div>
-    <div class="focus-title-row">
-      <h3 class="focus-title">${profile.name}</h3>
-      <span class="connector-status ${connectorStatusClass(profile.status)}">${profile.status}</span>
-    </div>
-    <div class="focus-meta">${profile.summary}</div>
-    <div class="focus-stats">
-      <div class="focus-stat">
-        <span>Runtime</span>
-        <strong>${mode?.label || "Unknown"}</strong>
-      </div>
-      <div class="focus-stat">
-        <span>Mode kind</span>
-        <strong>${mode?.kind || "n/a"}</strong>
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Config files</div>
-      <div class="focus-list">
-        <div class="focus-list-item">${profile.connectorFile}</div>
-        <div class="focus-list-item">${profile.sourceConfig}</div>
-        <div class="focus-list-item">${profile.contractFile}</div>
-        <div class="focus-list-item">${profile.adminCatalogFile}</div>
-      </div>
-    </div>
-  `;
-}
-
-function renderRuntimeModes() {
-  runtimeModeSelector.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    runtimeModeSelector.innerHTML = '<div class="history-empty">No runtime modes available.</div>';
-    return;
-  }
-
-  (profile.runtimeModes || []).forEach((mode) => {
-    const selected = currentRuntimeMode(profile)?.id === mode.id;
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `mode-card${selected ? " active-card" : ""}`;
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${mode.label}</div>
-          <div class="playbook-meta">${mode.kind} • ${formatList(mode.requiredServerNames || [])}</div>
-        </div>
-        <span class="connector-status ${selected ? "live" : "pending"}">${selected ? "ACTIVE" : "AVAILABLE"}</span>
-      </div>
-      <div class="playbook-detail">${mode.description}</div>
-      <div class="focus-list">
-        ${(mode.notes || []).map((note) => `<div class="focus-list-item">${note}</div>`).join("")}
-      </div>
-    `;
-    card.addEventListener("click", () => {
-      runtimeModeSelections[profile.id] = mode.id;
-      renderBuildConnectors();
-    });
-    runtimeModeSelector.appendChild(card);
-  });
-}
-
-function renderMcpFabric() {
-  mcpFabricList.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  const mode = currentRuntimeMode(profile);
-  const fabric = profile?.mcpFabric || {};
-
-  [
-    `Namespace: ${fabric.namespace || "n/a"}`,
-    `Advertised server: ${fabric.serverName || "n/a"}`,
-    `Runtime mode env var: ${fabric.runtimeModeEnvVar || "n/a"}`,
-    `Namespace env var: ${fabric.namespaceEnvVar || "n/a"}`,
-    `Source base URL env var: ${fabric.sourceBaseUrlEnvVar || "n/a"}`,
-    `Proxy base URL env var: ${fabric.proxyBaseUrlEnvVar || "n/a"}`,
-    `Required server(s): ${formatList(mode?.requiredServerNames || [])}`,
-    `Read path: ${fabric.sourceReadPath || "n/a"}`,
-    `Write path: ${fabric.sourceWritePath || "n/a"}`,
-  ].forEach((text) => {
-    const row = document.createElement("div");
-    row.className = "focus-list-item";
-    row.textContent = text;
-    mcpFabricList.appendChild(row);
-  });
-}
-
-function renderToolMappings() {
-  toolMappingList.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  const mode = currentRuntimeMode(profile);
-
-  (profile?.toolMappings || []).forEach((mapping) => {
-    const row = document.createElement("div");
-    row.className = "mapping-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${mapping.stableTool}</div>
-          <div class="playbook-meta">${mapping.bindingId} • ${mapping.strategy}</div>
-        </div>
-        <span class="focus-chip">${mode?.id === "vendor_mcp" ? "vendor path" : "proxy path"}</span>
-      </div>
-      <div class="mapping-grid">
-        <div class="mapping-block">
-          <div class="focus-kicker">Aliases</div>
-          <div class="playbook-detail">${formatList(mapping.aliases || [])}</div>
-        </div>
-        <div class="mapping-block">
-          <div class="focus-kicker">Request contract</div>
-          <div class="playbook-detail">${mapping.requestContract}</div>
-        </div>
-        <div class="mapping-block">
-          <div class="focus-kicker">Response contract</div>
-          <div class="playbook-detail">${mapping.responseContract}</div>
-        </div>
-        <div class="mapping-block">
-          <div class="focus-kicker">Implementation</div>
-          <div class="playbook-detail">${mapping.vendorTool}</div>
-        </div>
-        <div class="mapping-block">
-          <div class="focus-kicker">Policy</div>
-          <div class="playbook-detail">${mapping.policy}</div>
-        </div>
-      </div>
-    `;
-    toolMappingList.appendChild(row);
-  });
-}
-
-function renderAdminBindings() {
-  adminEnvBindings.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  const selectedModeId = currentRuntimeMode(profile)?.id;
-
-  (profile?.envBindings || [])
-    .filter((binding) => !binding.modes || binding.modes.includes(selectedModeId))
-    .forEach((binding) => {
-      const row = document.createElement("div");
-      row.className = "binding-row";
-      row.innerHTML = `
-        <div class="playbook-title-row">
-          <div>
-            <div class="playbook-name">${binding.key}</div>
-            <div class="playbook-meta">${binding.scope} • ${binding.kind}</div>
-          </div>
-          <span class="focus-chip">${formatList(binding.modes || [])}</span>
-        </div>
-        <div class="playbook-detail">${binding.note}</div>
-      `;
-      adminEnvBindings.appendChild(row);
-    });
-
-  (profile?.secretBindings || []).forEach((binding) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${binding.label}</div>
-          <div class="playbook-meta">${binding.scope} • secret reference</div>
-        </div>
-        <span class="connector-status pending">SECRET</span>
-      </div>
-      <div class="playbook-detail">${binding.note}</div>
-    `;
-    adminEnvBindings.appendChild(row);
-  });
-}
-
-function renderWritebackPolicy() {
-  writebackPolicyList.innerHTML = "";
-  const policy = activeConnectorProfile(visibleAdminConnectorProfiles())?.writePolicy || {};
-
-  [
-    { label: "Comments", value: policy.allowComments ? "allowed" : "blocked" },
-    { label: "Labels", value: policy.allowLabels ? "allowed" : "blocked" },
-    { label: "Attachments", value: policy.allowAttachments ? "allowed" : "blocked" },
-    { label: "Allowed field updates", value: formatList(policy.allowFieldUpdates || []) },
-    { label: "Denied field updates", value: formatList(policy.denyFieldUpdates || []) },
-    { label: "Approval posture", value: policy.approvalPosture || "n/a" },
-  ].forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
-    writebackPolicyList.appendChild(row);
-  });
-}
-
-function renderAdminSpec() {
-  adminSpecList.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    adminSpecList.innerHTML = '<div class="history-empty">No spec references available.</div>';
-    return;
-  }
-
-  [
-    `Admin sections: ${formatList(adminSections)}`,
-    `Connector file: ${profile.connectorFile}`,
-    `Source config: ${profile.sourceConfig}`,
-    `Stable contract: ${profile.contractFile}`,
-    `Admin catalog: ${profile.adminCatalogFile}`,
-    "Model: Work Type -> Run -> Thread",
-  ].forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `<div class="playbook-detail">${item}</div>`;
-    adminSpecList.appendChild(row);
-  });
-}
-
-function renderBuildConnectors() {
-  renderAdminConnectorCatalog();
-  renderAdminConnectorSummary();
-  renderRuntimeModes();
-  renderMcpFabric();
-  renderToolMappings();
-  renderAdminBindings();
-  renderWritebackPolicy();
-  renderAdminSpec();
-}
-
-function renderRoutingMatrix() {
-  routingMatrixList.innerHTML = "";
-  visibleRoutes().forEach((route) => {
-    const row = document.createElement("div");
-    row.className = "route-row";
-    row.innerHTML = `
-      <div class="route-main">
-        <div class="playbook-name">${route.workload}</div>
-        <div class="route-meta">${route.signals}</div>
-      </div>
-      <div class="focus-list">
-        <div class="focus-list-item">Selected playbook: ${route.playbook}</div>
-        <div class="focus-list-item">Confidence: ${route.confidence}</div>
-        <div class="focus-list-item">Fallback: ${route.fallback}</div>
-      </div>
-    `;
-    routingMatrixList.appendChild(row);
-  });
-
-  if (!routingMatrixList.children.length) {
-    routingMatrixList.innerHTML = '<div class="history-empty">No routing entries match the selected work type.</div>';
-  }
-}
-
-function renderWorkflowBindings() {
-  workflowBindingsList.innerHTML = "";
-  workflowBindings
-    .filter((binding) => matchesSearch([binding.name, binding.target, binding.workflow, binding.mode, binding.environment]))
-    .forEach((binding) => {
-      const row = document.createElement("div");
-      row.className = "binding-row";
-      row.innerHTML = `
-        <div class="playbook-title-row">
-          <div>
-            <div class="playbook-name">${binding.name}</div>
-            <div class="playbook-meta">${binding.mode} • ${binding.environment}</div>
-          </div>
-          <span class="focus-chip">${binding.target}</span>
-        </div>
-        <div class="playbook-detail">${binding.workflow}</div>
-      `;
-      workflowBindingsList.appendChild(row);
-    });
-}
-
-function renderChainGraph() {
-  chainGraphList.innerHTML = "";
-  chainGraph
-    .filter((chain) => matchesSearch([chain.name, ...(chain.nodes || [])]))
-    .forEach((chain) => {
-      const row = document.createElement("div");
-      row.className = "chain-row";
-      row.innerHTML = `
-        <div class="playbook-name">${chain.name}</div>
-        <div class="chain-nodes">
-          ${chain.nodes.map((node, index) => `
-            <span class="chain-node">${node}</span>${index < chain.nodes.length - 1 ? '<span class="chain-arrow">-></span>' : ""}
-          `).join("")}
-        </div>
-      `;
-      chainGraphList.appendChild(row);
-    });
-}
-
-function renderRunsBoard() {
+function renderMonitor() {
   runBoard.innerHTML = "";
   liveRuns
-    .filter((run) => matchesSearch([run.id, run.status, run.playbook, run.stage, run.source, run.risk, run.next]))
+    .filter((run) => matchesSearch([run.id, run.source, run.status, run.stage, run.next]))
     .forEach((run) => {
       const workType = workTypeById(run.workTypeId);
       const card = document.createElement("div");
@@ -1095,41 +570,37 @@ function renderRunsBoard() {
         <div class="run-top">
           <div>
             <div class="playbook-name">${run.id}</div>
-            <div class="playbook-meta">${workType?.name || "Unknown work type"} • ${run.source}</div>
+            <div class="playbook-meta">${workType?.name || "Unknown flow"} • ${run.source}</div>
           </div>
           <span class="connector-status ${connectorStatusClass(run.status)}">${run.status}</span>
         </div>
-        <div class="run-meta">Stage: ${run.stage} • Duration: ${run.duration} • Risk: ${run.risk}</div>
+        <div class="run-meta">Step: ${run.stage} • Duration: ${run.duration} • Risk: ${run.risk}</div>
         <div class="playbook-detail">${run.next}</div>
       `;
       card.addEventListener("click", () => {
         activeRunId = run.id;
         activeWorkTypeId = run.workTypeId || activeWorkTypeId;
-        setWorkspaceView("operate");
+        setWorkspaceView("runs");
         renderAll();
       });
       runBoard.appendChild(card);
     });
-}
 
-function renderDecisionTraceBoard() {
   decisionTraceList.innerHTML = "";
   decisionTrace
-    .filter((trace) => matchesSearch([trace.title, ...(trace.details || [])]))
-    .forEach((trace) => {
-      const block = document.createElement("div");
-      block.className = "route-row";
-      block.innerHTML = `
-        <div class="playbook-name">${trace.title}</div>
+    .filter((item) => matchesSearch([item.title, ...(item.details || [])]))
+    .forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "route-row";
+      row.innerHTML = `
+        <div class="playbook-name">${item.title}</div>
         <div class="focus-list">
-          ${(trace.details || []).map((detail) => `<div class="focus-list-item">${detail}</div>`).join("")}
+          ${(item.details || []).map((detail) => `<div class="focus-list-item">${detail}</div>`).join("")}
         </div>
       `;
-      decisionTraceList.appendChild(block);
+      decisionTraceList.appendChild(row);
     });
-}
 
-function renderFailureHeatmap() {
   failureHeatmapList.innerHTML = "";
   failureHeatmap
     .filter((item) => matchesSearch([item.area, item.value, item.note]))
@@ -1149,122 +620,106 @@ function renderFailureHeatmap() {
     });
 }
 
-function renderConnectors() {
+function renderHelpPanel() {
+  helpGlossary.innerHTML = "";
+  simpleGlossary.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${item.title}</div>
+      <div class="playbook-detail">${item.detail}</div>
+    `;
+    helpGlossary.appendChild(row);
+  });
+
   connectorList.innerHTML = "";
-  const visibleConnectors = connectors.filter((connector) => matchesSearch([
-    connector.name,
-    connector.detail,
-    connector.meta,
-    ...(connector.capabilities || []),
-    ...(connector.operations || []),
-    ...(connector.env || []),
-  ]));
-
-  if (!visibleConnectors.some((connector) => connector.id === activeConnectorId) && visibleConnectors[0]) {
-    activeConnectorId = visibleConnectors[0].id;
-  }
-
-  visibleConnectors.forEach((connector) => {
+  visibleConnectors().forEach((item) => {
     const card = document.createElement("button");
     card.type = "button";
-    card.className = `connector-card${connector.id === activeConnectorId ? " active" : ""}`;
+    card.className = `connector-card${item.id === activeConnectorId ? " active" : ""}`;
     card.innerHTML = `
       <div class="connector-line">
-        <div class="connector-name">${connector.name}</div>
-        <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
+        <div class="connector-name">${item.name}</div>
+        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
       </div>
-      <div class="connector-detail">${connector.detail}</div>
-      <div class="connector-meta">
-        <div>${connector.mode}</div>
-        <div>${connector.meta}</div>
-      </div>
+      <div class="connector-detail">${item.detail}</div>
     `;
     card.addEventListener("click", () => {
-      activeConnectorId = connector.id;
-      renderInspector();
-      renderBuildConnectors();
+      activeConnectorId = item.id;
+      renderSetup();
+      renderHelpPanel();
     });
     connectorList.appendChild(card);
   });
-}
 
-function renderInspector() {
-  renderConnectors();
-
-  const activeConnector = connectors.find((connector) => connector.id === activeConnectorId);
-  connectorFocus.innerHTML = activeConnector ? `
-    <div class="focus-kicker">Connector focus</div>
+  const connector = activeConnector();
+  connectorFocus.innerHTML = connector ? `
+    <div class="focus-kicker">Selected source</div>
     <div class="focus-title-row">
-      <h3 class="focus-title">${activeConnector.name}</h3>
-      <span class="connector-status ${connectorStatusClass(activeConnector.status)}">${activeConnector.status}</span>
+      <h3 class="focus-title">${connector.name}</h3>
+      <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
     </div>
-    <div class="focus-meta">${activeConnector.mode}</div>
+    <div class="focus-meta">${connector.mode}</div>
     <div class="focus-stats">
       <div class="focus-stat">
         <span>Health</span>
-        <strong>${activeConnector.health}</strong>
+        <strong>${connector.health}</strong>
       </div>
       <div class="focus-stat">
         <span>Latency</span>
-        <strong>${activeConnector.latency}</strong>
+        <strong>${connector.latency}</strong>
       </div>
     </div>
     <div class="focus-section">
-      <div class="focus-section-title">Capabilities</div>
+      <div class="focus-section-title">What it can do</div>
       <div class="focus-chip-row">
-        ${(activeConnector.capabilities || []).map((capability) => `<span class="focus-chip">${capability}</span>`).join("")}
+        ${(connector.capabilities || []).map((item) => `<span class="focus-chip">${item}</span>`).join("")}
       </div>
     </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Environment keys</div>
-      <div class="focus-list">
-        ${(activeConnector.env || []).map((item) => `<div class="focus-list-item">${item}</div>`).join("")}
-      </div>
-    </div>
-  ` : '<div class="history-empty">No connector selected.</div>';
+  ` : '<div class="history-empty">No source selected.</div>';
 
   providerGrid.innerHTML = "";
-  providers.forEach((provider) => {
+  providers.forEach((item) => {
     const card = document.createElement("div");
     card.className = "provider-card";
     card.innerHTML = `
-      <div class="provider-name">${provider.name}</div>
-      <div class="provider-source">${provider.source}</div>
+      <div class="provider-name">${item.name}</div>
+      <div class="provider-source">${item.source}</div>
     `;
     providerGrid.appendChild(card);
   });
 
   policyList.innerHTML = "";
-  policies.forEach((policy) => {
+  policies.forEach((item) => {
     const row = document.createElement("div");
     row.className = "policy-row";
-    row.innerHTML = `<span>${policy.label}</span><span class="policy-value">${policy.value}</span>`;
+    row.innerHTML = `<span>${item.label}</span><span class="policy-value">${item.value}</span>`;
     policyList.appendChild(row);
   });
 
   secretBindingsList.innerHTML = "";
-  secretBindings.forEach((binding) => {
+  secretBindings.forEach((item) => {
     const wrapper = document.createElement("div");
     wrapper.className = "secret-row";
     wrapper.innerHTML = `
       <div class="policy-row">
-        <span>${binding.label}</span>
-        <span class="policy-value">${binding.value}</span>
+        <span>${item.label}</span>
+        <span class="policy-value">${item.value}</span>
       </div>
-      <div class="policy-subtext">${binding.detail}</div>
+      <div class="policy-subtext">${item.detail}</div>
     `;
     secretBindingsList.appendChild(wrapper);
   });
 }
 
 function createTemplateRun(template) {
-  const matchingWorkType = workTypes.find((workType) => String(workType.profileId).toLowerCase() === String(template.profile).toLowerCase()) || workTypes[0];
+  const matchingWorkType = workTypes.find((item) => String(item.profileId).toLowerCase() === String(template.profile).toLowerCase()) || workTypes[0];
   const runNumber = liveRuns.length + 1;
-  const newRunId = `kd-run-${170 + runNumber}`;
-  const newThreadId = `thread-${runNumber}`;
+  const runId = `kd-run-${170 + runNumber}`;
+  const threadId = `thread-${runNumber}`;
 
   chats.unshift({
-    id: newThreadId,
+    id: threadId,
     title: `${template.title} ${runNumber}`,
     source: template.sourceGraph,
     time: "just now",
@@ -1272,7 +727,7 @@ function createTemplateRun(template) {
     profile: template.profile,
     sourceGraph: template.sourceGraph,
     workflowStage: template.stage,
-    meta: ["Template seeded", "Awaiting full execution", "Thread attached to run"],
+    meta: ["Example started", "Awaiting run launch", "Thread attached to run"],
     insights: [
       { label: "Confidence", value: "Pending", tone: "neutral" },
       { label: "Risk", value: "Unknown", tone: "warn" },
@@ -1280,44 +735,43 @@ function createTemplateRun(template) {
       { label: "Writeback", value: "Not armed", tone: "neutral" },
     ],
     timeline: [
-      { stage: "Intake", state: "active", summary: "Run created from a starter flow and waiting for execution." },
-      { stage: "Routing", state: "pending", summary: "The work type and playbook path will be confirmed on launch." },
-      { stage: "Execution", state: "pending", summary: "Execution begins after operator confirmation." },
+      { stage: "Intake", state: "active", summary: "Run created from a starter example." },
+      { stage: "Routing", state: "pending", summary: "The best flow will be confirmed on launch." },
+      { stage: "Execution", state: "pending", summary: "Execution starts after operator confirmation." },
     ],
     messages: [
       {
         role: "system",
         author: "Run Bootstrap",
         timestamp: "now",
-        chips: ["Starter flow", template.profile],
+        chips: ["Starter example", template.profile],
         body: `<p>${template.prompt}</p>`,
       },
     ],
   });
 
   liveRuns.unshift({
-    id: newRunId,
+    id: runId,
     workTypeId: matchingWorkType.id,
-    threadId: newThreadId,
+    threadId,
     status: "WAITING",
-    playbook: matchingWorkType.playbooks?.[0] || "work-intake",
+    playbook: matchingWorkType.playbooks?.[0] || "flow-start",
     stage: "intake",
     source: `Direct / ${template.title}`,
     duration: "0m",
     risk: "Medium",
-    next: "Confirm launch and route work",
-    owner: "Operator",
-    approval: "Awaiting launch",
-    summary: "New run created from a starter flow and ready for routing.",
+    next: "Launch the test run",
+    owner: "Developer",
+    approval: "Waiting to start",
+    summary: "New test run created from an example.",
     outputs: ["Run created"],
     connectors: matchingWorkType.connectorIds || [],
     trigger: "manual.launch",
   });
 
-  activeRunId = newRunId;
+  activeRunId = runId;
   activeWorkTypeId = matchingWorkType.id;
-  setWorkspaceView("operate");
-  setOperateView("thread");
+  setWorkspaceView("runs");
   renderAll();
 }
 
@@ -1327,8 +781,7 @@ function createNewRun() {
     profile: "Task",
     sourceGraph: "Direct input",
     stage: "Intake",
-    prompt: "Start a dry-run and collect enough context to choose the right work type.",
-    meta: "ad hoc",
+    prompt: "Start a dry-run and choose the best flow.",
   });
 }
 
@@ -1347,19 +800,18 @@ function appendSystemNote(chip, body) {
   });
 }
 
-function appendThreadMessage() {
+function appendRunNote() {
   const thread = activeThread();
   const text = composerInput.value.trim();
   if (!thread || !text) return;
 
   const now = new Date();
   const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
   thread.messages.push({
     role: "user",
-    author: "Operator",
+    author: "Developer",
     timestamp,
-    chips: ["Manual intervention"],
+    chips: ["Note"],
     body: `<p>${text.replace(/\n/g, "<br>")}</p>`,
   });
 
@@ -1367,18 +819,19 @@ function appendThreadMessage() {
     role: "agent",
     author: "Run Analysis",
     timestamp,
-    chips: ["Thread update", "Run scoped"],
-    body: "<p>The run thread has been updated. In a live environment this would persist the intervention, refresh the run summary, and notify any waiting approval or routing surfaces.</p>",
+    chips: ["Run updated"],
+    body: "<p>The note was added to the run thread. In a live system this would update the run summary and audit trail.</p>",
   });
 
-  renderOperateThread();
+  renderRuns();
   renderRunRail();
 }
 
 function attachRunContext() {
   const run = activeRun();
+  const workType = workTypeById(run?.workTypeId);
   if (!run) return;
-  composerInput.value = `${composerInput.value.trim()}\n\nRun context:\n- Run id: ${run.id}\n- Work type: ${workTypeById(run.workTypeId)?.name || "Unknown"}\n- Stage: ${run.stage}\n- Next: ${run.next}`;
+  composerInput.value = `${composerInput.value.trim()}\n\nRun context:\n- Run id: ${run.id}\n- Flow: ${workType?.name || "Unknown"}\n- Step: ${run.stage}\n- Next: ${run.next}`;
 }
 
 function handleLaunchRun() {
@@ -1386,28 +839,26 @@ function handleLaunchRun() {
     createNewRun();
     return;
   }
-  appendSystemNote("Launch requested", "The selected run has been staged for execution. In a live environment this would queue the playbook chain and allocate runtime capacity.");
-  setWorkspaceView("operate");
-  setOperateView("thread");
-  renderOperateThread();
+  appendSystemNote("Launch requested", "The selected run has been staged for execution.");
+  setWorkspaceView("runs");
+  renderRuns();
 }
 
-function handleExportBrief() {
+function handleExportNotes() {
   const run = activeRun();
+  const workType = workTypeById(run?.workTypeId);
   if (!run) return;
-  const workType = workTypeById(run.workTypeId);
-
   composerInput.value = [
     `Run: ${run.id}`,
-    `Work type: ${workType?.name || "n/a"}`,
+    `Flow: ${workType?.name || "n/a"}`,
     `Source: ${run.source}`,
-    `Stage: ${run.stage}`,
+    `Step: ${run.stage}`,
     `Next: ${run.next}`,
     "",
     composerInput.value,
   ].join("\n").trim();
-  appendSystemNote("Brief exported", "A run-level brief has been inserted into the thread composer.");
-  renderOperateThread();
+  appendSystemNote("Notes exported", "A short run summary was added to the notes box.");
+  renderRuns();
 }
 
 function handlePauseRun() {
@@ -1415,51 +866,30 @@ function handlePauseRun() {
   if (!run) return;
   run.status = "WAITING";
   run.next = "Resume required";
-  run.approval = "Operator paused execution";
-  appendSystemNote("Run paused", "The selected run is paused. The thread remains open for troubleshooting and next-step planning.");
+  run.approval = "Paused by developer";
+  appendSystemNote("Run paused", "The run is paused until you resume it.");
   renderAll();
-}
-
-function handleConnectorsBuildOpen() {
-  setWorkspaceView("build");
-  setBuildView("connectors");
-  renderHeader();
 }
 
 function handleSwitchWorkType() {
-  const storyWorkType = workTypes.find((workType) => workType.id === "story-delivery");
-  if (!storyWorkType) return;
-  activeWorkTypeId = storyWorkType.id;
-  setWorkspaceView("build");
-  setBuildView("workTypes");
+  const story = workTypes.find((item) => item.id === "story-delivery");
+  if (!story) return;
+  activeWorkTypeId = story.id;
+  setWorkspaceView("setup");
   renderAll();
 }
 
-function handleContextDiagnostics() {
-  connectorPanel.classList.add("open");
-  appendSystemNote("Diagnostics opened", "The inspector is now focused on connectors, policies, and secret scope for the current run.");
-  renderOperateThread();
+function handleOpenSetup() {
+  setWorkspaceView("setup");
+  renderHeader();
 }
 
-function renderAll() {
-  renderHeader();
-  renderOverviewStrip();
-  renderRunRail();
-  renderTemplates();
-  renderRunBanner();
-  renderOperateOverview();
-  renderOperateTimeline();
-  renderOperateThread();
-  renderWorkTypes();
-  renderOnboarding();
-  renderBuildConnectors();
-  renderRoutingMatrix();
-  renderWorkflowBindings();
-  renderChainGraph();
-  renderRunsBoard();
-  renderDecisionTraceBoard();
-  renderFailureHeatmap();
-  renderInspector();
+function handleOpenHelp() {
+  connectorPanel.classList.add("open");
+  if (activeWorkspaceView === "runs") {
+    appendSystemNote("Help opened", "The help panel is focused on source details, helpers, and safety rules.");
+    renderRuns();
+  }
 }
 
 function closePanelsOnMobile() {
@@ -1469,31 +899,34 @@ function closePanelsOnMobile() {
   }
 }
 
+function renderAll() {
+  ensureSelections();
+  renderHeader();
+  renderOverviewStrip();
+  renderRunRail();
+  renderTemplates();
+  renderSetup();
+  renderRuns();
+  renderMonitor();
+  renderHelpPanel();
+}
+
 newRunButton.addEventListener("click", createNewRun);
 launchRunButton.addEventListener("click", handleLaunchRun);
-exportBriefButton.addEventListener("click", handleExportBrief);
+exportBriefButton.addEventListener("click", handleExportNotes);
 pauseRunButton.addEventListener("click", handlePauseRun);
 attachContextButton.addEventListener("click", attachRunContext);
-sendButton.addEventListener("click", appendThreadMessage);
-connectSourceAdapterButton.addEventListener("click", handleConnectorsBuildOpen);
+sendButton.addEventListener("click", appendRunNote);
+connectSourceAdapterButton.addEventListener("click", handleOpenSetup);
 switchWorkTypeButton.addEventListener("click", handleSwitchWorkType);
-contextDiagnosticsButton.addEventListener("click", handleContextDiagnostics);
-openBuildConnectorsButton.addEventListener("click", handleConnectorsBuildOpen);
+contextDiagnosticsButton.addEventListener("click", handleOpenHelp);
 
-operateShortcut.addEventListener("click", () => setWorkspaceView("operate"));
-buildShortcut.addEventListener("click", () => setWorkspaceView("build"));
-observabilityShortcut.addEventListener("click", () => setWorkspaceView("observability"));
+setupShortcut.addEventListener("click", () => setWorkspaceView("setup"));
+runsShortcut.addEventListener("click", () => setWorkspaceView("runs"));
+monitorShortcut.addEventListener("click", () => setWorkspaceView("monitor"));
 
 workspaceTabs.forEach((tab) => {
   tab.addEventListener("click", () => setWorkspaceView(tab.dataset.view));
-});
-
-operateSubviewTabs.forEach((tab) => {
-  tab.addEventListener("click", () => setOperateView(tab.dataset.operateView));
-});
-
-buildSubviewTabs.forEach((tab) => {
-  tab.addEventListener("click", () => setBuildView(tab.dataset.buildView));
 });
 
 globalSearchInput.addEventListener("input", (event) => {
@@ -1506,7 +939,7 @@ filterChips.forEach((chip) => {
     activeFilter = chip.dataset.filter || "all";
     filterChips.forEach((button) => button.classList.toggle("active", button === chip));
     renderRunRail();
-    renderRunsBoard();
+    renderMonitor();
   });
 });
 
@@ -1529,5 +962,3 @@ window.addEventListener("resize", () => {
 
 renderAll();
 setWorkspaceView(activeWorkspaceView);
-setOperateView(activeOperateView);
-setBuildView(activeBuildView);

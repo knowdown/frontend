@@ -59,9 +59,7 @@ class FakeElement {
 
   set innerHTML(value) {
     this._innerHTML = value;
-    if (value === "") {
-      this.children = [];
-    }
+    if (value === "") this.children = [];
   }
 
   get innerHTML() {
@@ -99,45 +97,35 @@ const createById = (id, tagName = "div") => {
   return element;
 };
 
-const ids = [
-  "historyList",
-  "templateList",
-  "overviewStrip",
+[
   "workspaceKicker",
   "chatTitle",
   "chatMeta",
+  "overviewStrip",
+  "historyList",
+  "templateList",
+  "setupSourceValue",
+  "setupFlowValue",
+  "setupPublishValue",
+  "setupIntroList",
+  "setupFocus",
+  "setupSourceCatalog",
+  "workTypeRegistry",
+  "setupChecklistList",
+  "setupConfigList",
   "profileValue",
   "sourceValue",
   "stageValue",
   "nextActionValue",
+  "insightGrid",
   "runSummaryList",
   "runDependencyList",
-  "insightGrid",
   "timelineList",
-  "runDecisionTrace",
   "messageStream",
-  "workTypeRegistry",
-  "workTypeFocus",
-  "workTypeRouting",
-  "workTypePlaybooks",
-  "onboardingList",
-  "configSourceList",
-  "publishChecklist",
-  "adminConnectorCatalog",
-  "adminConnectorSummary",
-  "runtimeModeSelector",
-  "mcpFabricList",
-  "toolMappingList",
-  "adminEnvBindings",
-  "writebackPolicyList",
-  "adminSpecList",
-  "playbookRegistry",
-  "routingMatrix",
-  "workflowBindings",
-  "chainGraph",
   "runBoard",
   "decisionTrace",
   "failureHeatmap",
+  "helpGlossary",
   "connectorList",
   "connectorFocus",
   "providerGrid",
@@ -153,48 +141,38 @@ const ids = [
   "connectSourceAdapterButton",
   "switchWorkTypeButton",
   "contextDiagnosticsButton",
-  "openBuildConnectorsButton",
-  "operateShortcut",
-  "buildShortcut",
-  "observabilityShortcut",
+  "setupShortcut",
+  "runsShortcut",
+  "monitorShortcut",
   "historyToggle",
   "connectorToggle",
   "historyPanel",
   "connectorPanel",
-  "operatePanel",
-  "buildPanel",
-  "observabilityPanel",
-  "operateOverviewPanel",
-  "operateTimelinePanel",
-  "operateThreadPanel",
-  "buildWorkTypesPanel",
-  "buildPublishPanel",
-  "buildConnectorsPanel",
-  "operateTab",
-  "buildTab",
-  "observabilityTab",
-].map((id) => ({
+  "setupPanel",
+  "runsPanel",
+  "monitorPanel",
+  "setupTab",
+  "runsTab",
+  "monitorTab",
+].forEach((id) => createById(
   id,
-  tagName: (
-    id.endsWith("Button") ||
-    id.endsWith("Shortcut") ||
-    id.endsWith("Tab") ||
-    id === "attachContextButton" ||
-    id === "sendButton" ||
-    id === "exportBriefButton" ||
-    id === "pauseRunButton" ||
-    id === "launchRunButton" ||
-    id === "newRunButton" ||
-    id === "connectSourceAdapterButton" ||
-    id === "switchWorkTypeButton" ||
-    id === "contextDiagnosticsButton" ||
-    id === "openBuildConnectorsButton" ||
-    id === "historyToggle" ||
-    id === "connectorToggle"
-  ) ? "button" : "div",
-}));
-
-ids.forEach(({ id, tagName }) => createById(id, tagName));
+  id.endsWith("Button") ||
+  id.endsWith("Shortcut") ||
+  id.endsWith("Tab") ||
+  id === "attachContextButton" ||
+  id === "sendButton" ||
+  id === "exportBriefButton" ||
+  id === "pauseRunButton" ||
+  id === "launchRunButton" ||
+  id === "newRunButton" ||
+  id === "connectSourceAdapterButton" ||
+  id === "switchWorkTypeButton" ||
+  id === "contextDiagnosticsButton" ||
+  id === "historyToggle" ||
+  id === "connectorToggle"
+    ? "button"
+    : "div"
+));
 
 const globalSearchInput = createElement("globalSearchInput", "input");
 
@@ -209,51 +187,29 @@ filterWaiting.dataset.filter = "waiting";
 filterWaiting.classList.add("filter-chip");
 const filterChips = [filterAll, filterRunning, filterWaiting];
 
-elements.get("operateTab").dataset.view = "operate";
-elements.get("operateTab").classList.add("workspace-tab", "active");
-elements.get("buildTab").dataset.view = "build";
-elements.get("buildTab").classList.add("workspace-tab");
-elements.get("observabilityTab").dataset.view = "observability";
-elements.get("observabilityTab").classList.add("workspace-tab");
+elements.get("setupTab").dataset.view = "setup";
+elements.get("setupTab").classList.add("workspace-tab", "active");
+elements.get("runsTab").dataset.view = "runs";
+elements.get("runsTab").classList.add("workspace-tab");
+elements.get("monitorTab").dataset.view = "monitor";
+elements.get("monitorTab").classList.add("workspace-tab");
 const workspaceTabs = [
-  elements.get("operateTab"),
-  elements.get("buildTab"),
-  elements.get("observabilityTab"),
+  elements.get("setupTab"),
+  elements.get("runsTab"),
+  elements.get("monitorTab"),
 ];
-
-const operateSubviewNames = ["overview", "thread", "timeline"];
-const operateSubviewTabs = operateSubviewNames.map((name, index) => {
-  const element = createElement(`operateSubview-${name}`, "button");
-  element.dataset.operateView = name;
-  element.classList.add("subview-tab");
-  if (index === 0) element.classList.add("active");
-  return element;
-});
-
-const buildSubviewNames = ["workTypes", "connectors", "publish"];
-const buildSubviewTabs = buildSubviewNames.map((name, index) => {
-  const element = createElement(`buildSubview-${name}`, "button");
-  element.dataset.buildView = name;
-  element.classList.add("subview-tab");
-  if (index === 0) element.classList.add("active");
-  return element;
-});
 
 const documentStub = {
   getElementById(id) {
     return elements.get(id) || null;
   },
   querySelector(selector) {
-    if (selector === ".global-search input") {
-      return globalSearchInput;
-    }
+    if (selector === ".global-search input") return globalSearchInput;
     return null;
   },
   querySelectorAll(selector) {
     if (selector === ".filter-chip") return filterChips;
     if (selector === ".workspace-tab") return workspaceTabs;
-    if (selector === ".subview-tab[data-operate-view]") return operateSubviewTabs;
-    if (selector === ".subview-tab[data-build-view]") return buildSubviewTabs;
     return [];
   },
   createElement(tagName) {
@@ -277,74 +233,60 @@ const context = {
 context.global = context;
 vm.createContext(context);
 
-const appDataPath = path.join(__dirname, "..", "app-data.js");
-const appPath = path.join(__dirname, "..", "app.js");
-vm.runInContext(fs.readFileSync(appDataPath, "utf8"), context, { filename: "app-data.js" });
-vm.runInContext(fs.readFileSync(appPath, "utf8"), context, { filename: "app.js" });
+vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "app-data.js"), "utf8"), context, { filename: "app-data.js" });
+vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8"), context, { filename: "app.js" });
 
 function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message);
-  }
+  if (!condition) throw new Error(message);
 }
 
-assert(elements.get("operatePanel").hidden === false, "Operate panel should be visible on load");
-assert(elements.get("chatTitle").textContent.includes("kd-run-184"), "Initial header should point at the active run");
-assert(elements.get("workTypeRegistry").children.length >= 1, "Work types should render");
+assert(elements.get("setupPanel").hidden === false, "Setup should be the default view");
+assert(elements.get("chatTitle").textContent.includes("Set up"), "Header should explain the setup-first experience");
+assert(elements.get("setupIntroList").children.length >= 1, "Setup glossary should render");
+assert(elements.get("setupSourceCatalog").children.length >= 1, "Source systems should render");
+assert(elements.get("workTypeRegistry").children.length >= 1, "Flow templates should render");
 
-elements.get("buildShortcut").click();
-assert(elements.get("buildPanel").hidden === false, "Build panel should open from shortcut");
-assert(elements.get("workTypeFocus").innerHTML.includes("Defect Delivery"), "Initial work type focus should render");
+const secondSource = elements.get("setupSourceCatalog").children[1];
+assert(secondSource, "Expected a second source system");
+secondSource.click();
+assert(elements.get("setupSourceValue").textContent.length > 0, "Selecting a source should update setup banner");
 
-const secondWorkType = elements.get("workTypeRegistry").children[1];
-assert(secondWorkType, "Expected a second work type card");
-secondWorkType.click();
-assert(elements.get("workTypeFocus").innerHTML.includes("Story Delivery"), "Selecting a work type should update focus");
+const secondFlow = elements.get("workTypeRegistry").children[1];
+assert(secondFlow, "Expected a second flow template");
+secondFlow.click();
+assert(elements.get("setupFlowValue").textContent.length > 0, "Selecting a flow should update setup banner");
 
-buildSubviewTabs[1].click();
-assert(elements.get("buildConnectorsPanel").hidden === false, "Connector subview should open");
-assert(elements.get("adminConnectorCatalog").children.length >= 1, "Connector catalog should render");
-assert(elements.get("runtimeModeSelector").children.length >= 1, "Runtime modes should render");
-
-elements.get("operateShortcut").click();
-assert(elements.get("operatePanel").hidden === false, "Operate panel should reopen");
-operateSubviewTabs[1].click();
-assert(elements.get("operateThreadPanel").hidden === false, "Thread subview should open");
+elements.get("runsShortcut").click();
+assert(elements.get("runsPanel").hidden === false, "Runs view should open from shortcut");
+assert(elements.get("runSummaryList").children.length >= 1, "Run summary should render");
+assert(elements.get("messageStream").children.length >= 1, "Run thread should render");
 
 elements.get("attachContextButton").click();
-assert(elements.get("composerInput").value.includes("Run context:"), "Attach context should enrich the composer");
+assert(elements.get("composerInput").value.includes("Run context:"), "Attach context should enrich notes");
 
 const previousMessages = elements.get("messageStream").children.length;
 elements.get("sendButton").click();
-assert(elements.get("messageStream").children.length >= previousMessages, "Thread send should keep message rendering healthy");
+assert(elements.get("messageStream").children.length >= previousMessages, "Adding a note should keep thread healthy");
 
-elements.get("connectSourceAdapterButton").click();
-assert(elements.get("buildPanel").hidden === false, "Connector onboarding CTA should route to Build");
-assert(elements.get("buildConnectorsPanel").hidden === false, "Connector onboarding CTA should open connector subview");
-
-buildSubviewTabs[2].click();
-assert(elements.get("buildPublishPanel").hidden === false, "Publish subview should open");
-assert(elements.get("onboardingList").children.length >= 1, "Publish flow should render onboarding steps");
-
-elements.get("observabilityShortcut").click();
-assert(elements.get("observabilityPanel").hidden === false, "Observability panel should open");
-assert(elements.get("runBoard").children.length >= 1, "Run board should render");
+elements.get("monitorShortcut").click();
+assert(elements.get("monitorPanel").hidden === false, "Monitor view should open");
+assert(elements.get("runBoard").children.length >= 1, "Monitor runs should render");
 
 globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
-assert(elements.get("runBoard").children.length >= 1 || elements.get("playbookRegistry").children.length >= 1, "Search should preserve matching content");
+assert(elements.get("runBoard").children.length >= 1 || elements.get("historyList").children.length >= 1, "Search should preserve matching content");
 
 globalSearchInput.value = "";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
 filterRunning.click();
-assert(elements.get("historyList").children.length >= 1, "Run filter should preserve matching runs");
+assert(elements.get("historyList").children.length >= 1, "Run filter should keep matching runs");
 
 const beforeNewRunCount = elements.get("historyList").children.length;
 elements.get("newRunButton").click();
-assert(elements.get("historyList").children.length >= beforeNewRunCount, "Creating a run should keep the run rail populated");
-assert(elements.get("chatTitle").textContent.includes("kd-run-"), "New run should update the selected run header");
+assert(elements.get("historyList").children.length >= beforeNewRunCount, "Starting from an example should keep runs populated");
+assert(elements.get("runsPanel").hidden === false, "New example run should open the runs view");
 
 elements.get("contextDiagnosticsButton").click();
-assert(elements.get("connectorPanel").classList.contains("open"), "Diagnostics CTA should open the inspector");
+assert(elements.get("connectorPanel").classList.contains("open"), "Help panel should open from the runs view");
 
 console.log("frontend smoke test passed");

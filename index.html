@@ -24,9 +24,9 @@
       </div>
       <div class="brand-copy">
         <div class="brand-title">Knockdown</div>
-        <div class="brand-subtitle">Work Delivery Control Plane</div>
+        <div class="brand-subtitle">Developer-Friendly Automation Setup</div>
       </div>
-      <span class="status-pill">Runs + Build + Health</span>
+      <span class="status-pill">Setup + Test + Monitor</span>
     </div>
 
     <div class="topbar-center">
@@ -34,16 +34,16 @@
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M10.5 4a6.5 6.5 0 1 0 3.998 11.627l4.438 4.437 1.414-1.414-4.437-4.438A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"></path>
         </svg>
-        <input type="text" placeholder="Search runs, work types, connectors, playbooks, secrets" aria-label="Global search">
+        <input type="text" placeholder="Search sources, flows, runs, health" aria-label="Global search">
       </div>
     </div>
 
     <div class="topbar-right">
-      <button class="ghost-button" id="operateShortcut">Runs</button>
-      <button class="ghost-button" id="buildShortcut">Build</button>
-      <button class="ghost-button" id="observabilityShortcut">Health</button>
-      <button class="accent-button" id="launchRunButton">Launch Run</button>
-      <button class="mobile-toggle mobile-toggle-right" id="connectorToggle" aria-label="Toggle inspector">
+      <button class="ghost-button" id="setupShortcut">Setup</button>
+      <button class="ghost-button" id="runsShortcut">Runs</button>
+      <button class="ghost-button" id="monitorShortcut">Monitor</button>
+      <button class="accent-button" id="launchRunButton">Start Test Run</button>
+      <button class="mobile-toggle mobile-toggle-right" id="connectorToggle" aria-label="Toggle help panel">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 7h16v2H4V7Zm0 8h10v2H4v-2Zm12-1 4 2-4 2v-4Zm-2-8 4 2-4 2V6Z"></path>
         </svg>
@@ -58,7 +58,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M11 5h2v14h-2V5Zm-6 6h14v2H5v-2Z"></path>
           </svg>
-          Start Test Run
+          Start from Example
         </button>
       </div>
 
@@ -69,12 +69,12 @@
       </div>
 
       <section class="history-group">
-        <div class="history-label">Runs</div>
+        <div class="history-label">Recent Runs</div>
         <div class="history-list" id="historyList"></div>
       </section>
 
       <section class="history-group">
-        <div class="history-label">Starter Flows</div>
+        <div class="history-label">Starter Examples</div>
         <div class="template-list" id="templateList"></div>
       </section>
     </aside>
@@ -84,360 +84,213 @@
 
       <section class="workspace-header">
         <div class="workspace-title-wrap">
-          <div class="workspace-kicker" id="workspaceKicker">Selected run</div>
-          <h1 class="workspace-title" id="chatTitle">Run details</h1>
+          <div class="workspace-kicker" id="workspaceKicker">Start here</div>
+          <h1 class="workspace-title" id="chatTitle">Set up a new automation flow</h1>
           <div class="workspace-meta" id="chatMeta"></div>
         </div>
 
         <div class="workspace-actions">
-          <button class="ghost-button" id="exportBriefButton">Export Brief</button>
+          <button class="ghost-button" id="exportBriefButton">Export Notes</button>
           <button class="ghost-button" id="pauseRunButton">Pause Run</button>
         </div>
       </section>
 
       <section class="workspace-switcher">
-        <button class="workspace-tab active" id="operateTab" data-view="operate" type="button">Runs</button>
-        <button class="workspace-tab" id="buildTab" data-view="build" type="button">Build</button>
-        <button class="workspace-tab" id="observabilityTab" data-view="observability" type="button">Health</button>
+        <button class="workspace-tab active" id="setupTab" data-view="setup" type="button">Setup</button>
+        <button class="workspace-tab" id="runsTab" data-view="runs" type="button">Runs</button>
+        <button class="workspace-tab" id="monitorTab" data-view="monitor" type="button">Monitor</button>
       </section>
 
-      <section class="workspace-panel" id="operatePanel">
+      <section class="workspace-panel" id="setupPanel">
         <section class="delivery-banner">
           <div class="banner-grid">
             <div class="banner-card">
-              <div class="banner-label">Work Type</div>
-              <div class="banner-value" id="profileValue">Defect Delivery</div>
-              <div class="banner-note">The admin object that binds routing, profile, playbooks, connectors, and policy.</div>
+              <div class="banner-label">1. Source system</div>
+              <div class="banner-value" id="setupSourceValue">ServiceNow BT1</div>
+              <div class="banner-note">Choose where work comes from.</div>
             </div>
             <div class="banner-card">
-              <div class="banner-label">Source</div>
-              <div class="banner-value" id="sourceValue">BT1 + GitHub + Wiki</div>
-              <div class="banner-note">Resolved source graph and execution context for the active run.</div>
-            </div>
-            <div class="banner-card">
-              <div class="banner-label">Active Stage</div>
-              <div class="banner-value" id="stageValue">verify_runtime</div>
-              <div class="banner-note">Live execution state for the selected run.</div>
+              <div class="banner-label">2. Flow template</div>
+              <div class="banner-value" id="setupFlowValue">Defect Delivery</div>
+              <div class="banner-note">Choose what the automation should do.</div>
             </div>
             <div class="banner-card accent">
-              <div class="banner-label">Next Move</div>
-              <div class="banner-value" id="nextActionValue">Await approval</div>
-              <div class="banner-note">Runs are primary; threads are now the troubleshooting view inside each run.</div>
+              <div class="banner-label">3. Go live safely</div>
+              <div class="banner-value" id="setupPublishValue">Dry-run first</div>
+              <div class="banner-note">Test the setup before enabling real updates.</div>
             </div>
           </div>
         </section>
 
-        <section class="subview-switcher">
-          <button class="subview-tab active" data-operate-view="overview" type="button">Summary</button>
-          <button class="subview-tab" data-operate-view="thread" type="button">Thread</button>
-          <button class="subview-tab" data-operate-view="timeline" type="button">Timeline</button>
-        </section>
-
-        <section class="subview-panel" id="operateOverviewPanel">
-          <section class="insight-grid" id="insightGrid"></section>
-          <section class="workflow-layout">
-            <div class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Run posture</div>
-                  <h2 class="card-title">Execution summary</h2>
-                </div>
-              </div>
-              <div class="summary-list" id="runSummaryList"></div>
-            </div>
-
-            <div class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Connected surface</div>
-                  <h2 class="card-title">Runtime dependencies</h2>
-                </div>
-              </div>
-              <div class="focus-list" id="runDependencyList"></div>
-            </div>
-          </section>
-        </section>
-
-        <section class="subview-panel" id="operateTimelinePanel" hidden>
-          <div class="workflow-layout">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Lifecycle progression</div>
-                  <h2 class="card-title">Run timeline</h2>
-                </div>
-              </div>
-              <div class="timeline-list" id="timelineList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Routing reason</div>
-                  <h2 class="card-title">Decision trace for this run</h2>
-                </div>
-              </div>
-              <div class="trace-list" id="runDecisionTrace"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="subview-panel" id="operateThreadPanel" hidden>
-          <section class="message-stream" id="messageStream"></section>
-
-          <section class="suggestion-strip">
-            <button class="suggestion-card" id="connectSourceAdapterButton">Open connector onboarding</button>
-            <button class="suggestion-card" id="switchWorkTypeButton">Switch to story work type</button>
-            <button class="suggestion-card" id="contextDiagnosticsButton">Open runtime diagnostics</button>
-          </section>
-
-          <section class="composer-shell">
-            <div class="composer-toolbar">
-              <span class="toolbar-chip">Run-scoped</span>
-              <span class="toolbar-chip">Troubleshooting thread</span>
-              <span class="toolbar-chip">Audit trail retained</span>
-            </div>
-            <label class="composer">
-              <textarea id="composerInput" rows="4">Summarize the run, identify the active blocker, and recommend the safest next action before any writeback.</textarea>
-              <div class="composer-footer">
-                <div class="composer-hints">
-                  <span>Run-centric</span>
-                  <span>Thread-aware</span>
-                  <span>Operator intervention</span>
-                </div>
-                <div class="composer-actions">
-                  <button class="ghost-button" id="attachContextButton">Attach Run Context</button>
-                  <button class="accent-button" id="sendButton">Add to Thread</button>
-                </div>
-              </div>
-            </label>
-          </section>
-        </section>
-
-      </section>
-
-      <section class="workspace-panel" id="buildPanel" hidden>
-        <section class="subview-switcher">
-          <button class="subview-tab active" data-build-view="workTypes" type="button">Work Types</button>
-          <button class="subview-tab" data-build-view="connectors" type="button">Connectors</button>
-          <button class="subview-tab" data-build-view="publish" type="button">Publish</button>
-        </section>
-
-        <section class="subview-panel" id="buildWorkTypesPanel">
-          <div class="control-grid">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Primary admin object</div>
-                  <h2 class="card-title">Work types</h2>
-                </div>
-              </div>
-              <div class="playbook-list" id="workTypeRegistry"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Selected work type</div>
-                  <h2 class="card-title">Profile, publish state, and posture</h2>
-                </div>
-              </div>
-              <div class="connector-focus" id="workTypeFocus"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Routing</div>
-                  <h2 class="card-title">Selection signals</h2>
-                </div>
-              </div>
-              <div class="route-list" id="workTypeRouting"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Execution chain</div>
-                  <h2 class="card-title">Playbooks and outputs</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="workTypePlaybooks"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="subview-panel" id="buildPublishPanel" hidden>
-          <div class="control-grid">
-            <section class="workflow-card admin-span-2">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Guided publish flow</div>
-                  <h2 class="card-title">From source connection to production</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="onboardingList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Resolved config</div>
-                  <h2 class="card-title">Supported source-of-truth types</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="configSourceList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Publish posture</div>
-                  <h2 class="card-title">Test and release gates</h2>
-                </div>
-              </div>
-              <div class="policy-list" id="publishChecklist"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="subview-panel" id="buildConnectorsPanel" hidden>
-          <div class="control-grid admin-grid">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Connector catalog</div>
-                  <h2 class="card-title">Runtime posture and bindings</h2>
-                </div>
-              </div>
-              <div class="playbook-list" id="adminConnectorCatalog"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Selected connector</div>
-                  <h2 class="card-title">Config and contract</h2>
-                </div>
-              </div>
-              <div class="connector-focus" id="adminConnectorSummary"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Runtime mode</div>
-                  <h2 class="card-title">Proxy vs vendor MCP</h2>
-                </div>
-              </div>
-              <div class="mode-list" id="runtimeModeSelector"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">MCP fabric</div>
-                  <h2 class="card-title">Namespace and server bindings</h2>
-                </div>
-              </div>
-              <div class="focus-list" id="mcpFabricList"></div>
-            </section>
-
-            <section class="workflow-card admin-span-2">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Tool mapping inspector</div>
-                  <h2 class="card-title">Stable contract to implementation map</h2>
-                </div>
-              </div>
-              <div class="mapping-list" id="toolMappingList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Environment and secrets</div>
-                  <h2 class="card-title">Binding scopes</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="adminEnvBindings"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Writeback policy</div>
-                  <h2 class="card-title">Allowed mutations</h2>
-                </div>
-              </div>
-              <div class="policy-list" id="writebackPolicyList"></div>
-            </section>
-
-            <section class="workflow-card admin-span-2">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Implementation contract</div>
-                  <h2 class="card-title">Spec and source-of-truth files</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="adminSpecList"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="subview-panel" id="buildPlaybooksPanel" hidden>
-          <div class="control-grid">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Playbook registry</div>
-                  <h2 class="card-title">Execution chains</h2>
-                </div>
-              </div>
-              <div class="playbook-list" id="playbookRegistry"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Routing</div>
-                  <h2 class="card-title">Automatic route selection</h2>
-                </div>
-              </div>
-              <div class="route-list" id="routingMatrix"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Workflow bindings</div>
-                  <h2 class="card-title">GitHub Actions and runners</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="workflowBindings"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Chain graph</div>
-                  <h2 class="card-title">Downstream trigger topology</h2>
-                </div>
-              </div>
-              <div class="chain-list" id="chainGraph"></div>
-            </section>
-          </div>
-        </section>
-
-      </section>
-
-      <section class="workspace-panel" id="observabilityPanel" hidden>
         <div class="control-grid">
           <section class="workflow-card">
             <div class="card-top">
               <div>
-                <div class="card-kicker">Live runs</div>
-                <h2 class="card-title">Health board</h2>
+                <div class="card-kicker">Plain-English guide</div>
+                <h2 class="card-title">How this works</h2>
+              </div>
+            </div>
+            <div class="binding-list" id="setupIntroList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Selected setup</div>
+                <h2 class="card-title">What will happen</h2>
+              </div>
+            </div>
+            <div class="connector-focus" id="setupFocus"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Pick a source</div>
+                <h2 class="card-title">Source systems</h2>
+              </div>
+            </div>
+            <div class="playbook-list" id="setupSourceCatalog"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Pick a flow</div>
+                <h2 class="card-title">Automation templates</h2>
+              </div>
+            </div>
+            <div class="playbook-list" id="workTypeRegistry"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Safety checklist</div>
+                <h2 class="card-title">Before you go live</h2>
+              </div>
+            </div>
+            <div class="binding-list" id="setupChecklistList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Where settings can live</div>
+                <h2 class="card-title">Config and secrets</h2>
+              </div>
+            </div>
+            <div class="binding-list" id="setupConfigList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="workspace-panel" id="runsPanel" hidden>
+        <section class="delivery-banner">
+          <div class="banner-grid">
+            <div class="banner-card">
+              <div class="banner-label">Flow</div>
+              <div class="banner-value" id="profileValue">Defect Delivery</div>
+              <div class="banner-note">The chosen automation template for this run.</div>
+            </div>
+            <div class="banner-card">
+              <div class="banner-label">Source</div>
+              <div class="banner-value" id="sourceValue">BT1 + GitHub + Wiki</div>
+              <div class="banner-note">The source data and tools used by this run.</div>
+            </div>
+            <div class="banner-card">
+              <div class="banner-label">Current step</div>
+              <div class="banner-value" id="stageValue">verify_runtime</div>
+              <div class="banner-note">What the automation is doing now.</div>
+            </div>
+            <div class="banner-card accent">
+              <div class="banner-label">Next action</div>
+              <div class="banner-value" id="nextActionValue">Await approval</div>
+              <div class="banner-note">The most important next thing to do.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="insight-grid" id="insightGrid"></section>
+
+        <div class="control-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Run summary</div>
+                <h2 class="card-title">What is going on</h2>
+              </div>
+            </div>
+            <div class="summary-list" id="runSummaryList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Run details</div>
+                <h2 class="card-title">Why it was selected</h2>
+              </div>
+            </div>
+            <div class="focus-list" id="runDependencyList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Timeline</div>
+                <h2 class="card-title">Step by step</h2>
+              </div>
+            </div>
+            <div class="timeline-list" id="timelineList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Troubleshooting notes</div>
+                <h2 class="card-title">Run thread</h2>
+              </div>
+            </div>
+            <div class="message-stream" id="messageStream"></div>
+          </section>
+        </div>
+
+        <section class="suggestion-strip">
+          <button class="suggestion-card" id="connectSourceAdapterButton">Open setup</button>
+          <button class="suggestion-card" id="switchWorkTypeButton">Switch to story flow</button>
+          <button class="suggestion-card" id="contextDiagnosticsButton">Open help panel</button>
+        </section>
+
+        <section class="composer-shell">
+          <div class="composer-toolbar">
+            <span class="toolbar-chip">Run notes</span>
+            <span class="toolbar-chip">Troubleshooting</span>
+            <span class="toolbar-chip">Audit trail</span>
+          </div>
+          <label class="composer">
+            <textarea id="composerInput" rows="4">Summarize the run, identify the blocker, and recommend the safest next action.</textarea>
+            <div class="composer-footer">
+              <div class="composer-hints">
+                <span>Simple summary</span>
+                <span>Run context</span>
+                <span>Operator notes</span>
+              </div>
+              <div class="composer-actions">
+                <button class="ghost-button" id="attachContextButton">Attach Run Context</button>
+                <button class="accent-button" id="sendButton">Add Note</button>
+              </div>
+            </div>
+          </label>
+        </section>
+      </section>
+
+      <section class="workspace-panel" id="monitorPanel" hidden>
+        <div class="control-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Live activity</div>
+                <h2 class="card-title">Runs</h2>
               </div>
             </div>
             <div class="run-board" id="runBoard"></div>
@@ -446,8 +299,8 @@
           <section class="workflow-card">
             <div class="card-top">
               <div>
-                <div class="card-kicker">Decision trace</div>
-                <h2 class="card-title">Why work types were selected</h2>
+                <div class="card-kicker">Routing</div>
+                <h2 class="card-title">Why flows were chosen</h2>
               </div>
             </div>
             <div class="trace-list" id="decisionTrace"></div>
@@ -456,8 +309,8 @@
           <section class="workflow-card">
             <div class="card-top">
               <div>
-                <div class="card-kicker">Failure analysis</div>
-                <h2 class="card-title">Error hotspots and retries</h2>
+                <div class="card-kicker">Problems</div>
+                <h2 class="card-title">What needs attention</h2>
               </div>
             </div>
             <div class="heatmap-list" id="failureHeatmap"></div>
@@ -471,10 +324,19 @@
         <section class="config-card">
           <div class="card-top">
             <div>
-              <div class="card-kicker">Inspector</div>
-              <h2 class="card-title">Available connectors</h2>
+              <div class="card-kicker">Quick help</div>
+              <h2 class="card-title">Important terms</h2>
             </div>
-            <button class="ghost-button small" id="openBuildConnectorsButton">Open Build</button>
+          </div>
+          <div class="binding-list" id="helpGlossary"></div>
+        </section>
+
+        <section class="config-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Selected source</div>
+              <h2 class="card-title">Connection details</h2>
+            </div>
           </div>
 
           <div class="connector-list" id="connectorList"></div>
@@ -484,8 +346,8 @@
         <section class="config-card">
           <div class="card-top">
             <div>
-              <div class="card-kicker">Context providers</div>
-              <h2 class="card-title">Delivery intelligence map</h2>
+              <div class="card-kicker">Helpers</div>
+              <h2 class="card-title">What the platform can use</h2>
             </div>
           </div>
 
@@ -495,22 +357,12 @@
         <section class="config-card">
           <div class="card-top">
             <div>
-              <div class="card-kicker">Policy posture</div>
-              <h2 class="card-title">Execution controls</h2>
+              <div class="card-kicker">Safety</div>
+              <h2 class="card-title">Rules and secrets</h2>
             </div>
           </div>
 
           <div class="policy-list" id="policyList"></div>
-        </section>
-
-        <section class="config-card">
-          <div class="card-top">
-            <div>
-              <div class="card-kicker">Secrets</div>
-              <h2 class="card-title">Connection scopes</h2>
-            </div>
-          </div>
-
           <div class="policy-list" id="secretBindings"></div>
         </section>
       </div>
