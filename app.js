@@ -1,142 +1,44 @@
-const consoleData = window.KNOCKDOWN_CONSOLE_DATA || {};
+const data = window.KNOCKDOWN_CONSOLE_DATA || {};
 
-const queueHealth = consoleData.queueHealth || [];
-const templates = consoleData.templates || [];
-const workTypes = consoleData.workTypes || [];
-const onboardingWorkflow = consoleData.onboardingWorkflow || [];
-const configSources = consoleData.configSources || [];
-const profiles = consoleData.profiles || [];
-const chats = consoleData.chats || [];
-const connectors = consoleData.connectors || [];
-const providers = consoleData.providers || [];
-const policies = consoleData.policies || [];
-const secretBindings = consoleData.secretBindings || [];
-const liveRuns = consoleData.liveRuns || [];
-const decisionTrace = consoleData.decisionTrace || [];
-const failureHeatmap = consoleData.failureHeatmap || [];
+const templates = data.templates || [];
+const workTypes = data.workTypes || [];
+const connectors = data.connectors || [];
+const configSources = data.configSources || [];
+const secretBindings = data.secretBindings || [];
+const chats = data.chats || [];
+const liveRuns = data.liveRuns || [];
+const decisionTrace = data.decisionTrace || [];
+const failureHeatmap = data.failureHeatmap || [];
 
-const globalSearchInput = document.querySelector(".global-search input");
-const workspaceKicker = document.getElementById("workspaceKicker");
-const chatTitle = document.getElementById("chatTitle");
-const chatMeta = document.getElementById("chatMeta");
-const overviewStrip = document.getElementById("overviewStrip");
+const $ = (id) => document.getElementById(id);
 
-const historyList = document.getElementById("historyList");
-const templateList = document.getElementById("templateList");
-
-const setupSourceValue = document.getElementById("setupSourceValue");
-const setupFlowValue = document.getElementById("setupFlowValue");
-const setupPublishValue = document.getElementById("setupPublishValue");
-const setupIntroList = document.getElementById("setupIntroList");
-const setupFocus = document.getElementById("setupFocus");
-const setupSourceCatalog = document.getElementById("setupSourceCatalog");
-const workTypeRegistry = document.getElementById("workTypeRegistry");
-const setupChecklistList = document.getElementById("setupChecklistList");
-const setupConfigList = document.getElementById("setupConfigList");
-
-const profileValue = document.getElementById("profileValue");
-const sourceValue = document.getElementById("sourceValue");
-const stageValue = document.getElementById("stageValue");
-const nextActionValue = document.getElementById("nextActionValue");
-const insightGrid = document.getElementById("insightGrid");
-const runSummaryList = document.getElementById("runSummaryList");
-const runDependencyList = document.getElementById("runDependencyList");
-const timelineList = document.getElementById("timelineList");
-const messageStream = document.getElementById("messageStream");
-
-const runBoard = document.getElementById("runBoard");
-const decisionTraceList = document.getElementById("decisionTrace");
-const failureHeatmapList = document.getElementById("failureHeatmap");
-
-const helpGlossary = document.getElementById("helpGlossary");
-const connectorList = document.getElementById("connectorList");
-const connectorFocus = document.getElementById("connectorFocus");
-const providerGrid = document.getElementById("providerGrid");
-const policyList = document.getElementById("policyList");
-const secretBindingsList = document.getElementById("secretBindings");
-
-const composerInput = document.getElementById("composerInput");
-const attachContextButton = document.getElementById("attachContextButton");
-const sendButton = document.getElementById("sendButton");
-const exportBriefButton = document.getElementById("exportBriefButton");
-const pauseRunButton = document.getElementById("pauseRunButton");
-const launchRunButton = document.getElementById("launchRunButton");
-const newRunButton = document.getElementById("newRunButton");
-const connectSourceAdapterButton = document.getElementById("connectSourceAdapterButton");
-const switchWorkTypeButton = document.getElementById("switchWorkTypeButton");
-const contextDiagnosticsButton = document.getElementById("contextDiagnosticsButton");
-
-const setupShortcut = document.getElementById("setupShortcut");
-const runsShortcut = document.getElementById("runsShortcut");
-const monitorShortcut = document.getElementById("monitorShortcut");
-const workspaceTabs = Array.from(document.querySelectorAll(".workspace-tab"));
-
-const historyToggle = document.getElementById("historyToggle");
-const connectorToggle = document.getElementById("connectorToggle");
-const historyPanel = document.getElementById("historyPanel");
-const connectorPanel = document.getElementById("connectorPanel");
-const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
-
-const workspacePanels = {
-  setup: document.getElementById("setupPanel"),
-  runs: document.getElementById("runsPanel"),
-  monitor: document.getElementById("monitorPanel"),
+const panels = {
+  setup: $("setupPanel"),
+  runs: $("runsPanel"),
+  monitor: $("monitorPanel"),
 };
 
-let activeWorkspaceView = "setup";
+const navButtons = Array.from(document.querySelectorAll(".primary-nav"));
+const searchInput = document.querySelector(".global-search input");
+const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
+
+let activeView = "setup";
 let activeRunId = liveRuns[0]?.id || "";
-let activeWorkTypeId = workTypes[0]?.id || "";
-let activeConnectorId = connectors[0]?.id || "";
+let activeFlowId = workTypes[0]?.id || "";
+let activeSourceId = connectors[0]?.id || "";
 let activeFilter = "all";
 let searchTerm = "";
 
-const simpleGlossary = [
-  { title: "Source system", detail: "Where work comes from, such as ServiceNow or GitHub." },
-  { title: "Flow", detail: "A reusable automation template for one type of work." },
-  { title: "Run", detail: "One execution of a flow." },
-  { title: "Run thread", detail: "Troubleshooting notes for a run." },
-];
-
-function searchable(values) {
-  return values.filter(Boolean).join(" ").toLowerCase();
-}
-
-function matchesSearch(values) {
+function matches(values) {
   if (!searchTerm) return true;
-  return searchable(values).includes(searchTerm);
+  return values.filter(Boolean).join(" ").toLowerCase().includes(searchTerm);
 }
 
-function connectorStatusClass(status) {
-  const normalized = String(status || "").toLowerCase();
-  if (["live", "active", "running", "online"].includes(normalized)) return "live";
-  if (["waiting", "chained", "shared"].includes(normalized)) return "pending";
+function statusClass(status) {
+  const value = String(status || "").toLowerCase();
+  if (["live", "active", "running", "online"].includes(value)) return "live";
+  if (["waiting", "chained", "shared"].includes(value)) return "pending";
   return "staged";
-}
-
-function insightToneClass(tone) {
-  if (tone === "good") return "good";
-  if (tone === "warn") return "warn";
-  return "neutral";
-}
-
-function timelineStateClass(state) {
-  if (state === "completed") return "completed";
-  if (state === "active") return "active";
-  return "pending";
-}
-
-function formatList(value, separator = ", ") {
-  if (Array.isArray(value)) return value.join(separator);
-  return value || "None";
-}
-
-function workTypeById(id) {
-  return workTypes.find((item) => item.id === id) || null;
-}
-
-function profileForWorkType(workType) {
-  if (!workType) return null;
-  return profiles.find((profile) => profile.id === workType.profileId) || null;
 }
 
 function activeRun() {
@@ -145,606 +47,314 @@ function activeRun() {
 
 function activeThread() {
   const run = activeRun();
-  if (!run) return null;
-  return chats.find((chat) => chat.id === run.threadId) || null;
+  return chats.find((chat) => chat.id === run?.threadId) || null;
 }
 
-function activeWorkType() {
-  return workTypeById(activeWorkTypeId) || workTypes[0] || null;
+function activeFlow() {
+  return workTypes.find((flow) => flow.id === activeFlowId) || workTypes[0] || null;
 }
 
-function activeConnector() {
-  return connectors.find((connector) => connector.id === activeConnectorId) || connectors[0] || null;
+function activeSource() {
+  return connectors.find((source) => source.id === activeSourceId) || connectors[0] || null;
 }
 
 function visibleRuns() {
   return liveRuns.filter((run) => {
-    const normalized = String(run.status || "").toLowerCase();
-    const filterMatch = (
-      activeFilter === "all" ||
-      (activeFilter === "running" && normalized === "running") ||
-      (activeFilter === "waiting" && (normalized === "waiting" || normalized === "chained"))
-    );
-    const workType = workTypeById(run.workTypeId);
-    return filterMatch && matchesSearch([
-      run.id,
-      run.source,
-      run.stage,
-      run.status,
-      run.next,
-      run.owner,
-      workType?.name,
-    ]);
+    const status = String(run.status || "").toLowerCase();
+    const filterMatch = activeFilter === "all" ||
+      (activeFilter === "running" && status === "running") ||
+      (activeFilter === "waiting" && ["waiting", "chained"].includes(status));
+    const flow = workTypes.find((item) => item.id === run.workTypeId);
+    return filterMatch && matches([run.id, run.source, run.stage, run.next, flow?.name]);
   });
 }
 
-function visibleTemplates() {
-  return templates.filter((template) => matchesSearch([
-    template.title,
-    template.meta,
-    template.profile,
-    template.prompt,
-  ]));
-}
-
-function visibleWorkTypes() {
-  return workTypes.filter((workType) => matchesSearch([
-    workType.name,
-    workType.summary,
-    workType.publishState,
-    workType.approvalPosture,
-    ...(workType.routingSignals || []),
-  ]));
-}
-
-function visibleConnectors() {
-  return connectors.filter((connector) => matchesSearch([
-    connector.name,
-    connector.detail,
-    connector.mode,
-    connector.meta,
-  ]));
-}
-
-function ensureSelections() {
-  const runs = visibleRuns();
-  if (runs.length && !runs.some((run) => run.id === activeRunId)) {
-    activeRunId = runs[0].id;
-  }
-
-  const workType = activeRun()?.workTypeId ? workTypeById(activeRun().workTypeId) : null;
-  if (workType && !searchTerm) {
-    activeWorkTypeId = workType.id;
-  } else if (!visibleWorkTypes().some((item) => item.id === activeWorkTypeId) && visibleWorkTypes()[0]) {
-    activeWorkTypeId = visibleWorkTypes()[0].id;
-  }
-
-  if (!visibleConnectors().some((item) => item.id === activeConnectorId) && visibleConnectors()[0]) {
-    activeConnectorId = visibleConnectors()[0].id;
-  }
-}
-
-function setWorkspaceView(view) {
-  activeWorkspaceView = view;
-  Object.entries(workspacePanels).forEach(([key, panel]) => {
-    if (panel) panel.hidden = key !== view;
+function setView(view) {
+  activeView = view;
+  Object.entries(panels).forEach(([key, panel]) => {
+    panel.hidden = key !== view;
   });
-  workspaceTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+  navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === view));
   renderHeader();
 }
 
 function renderHeader() {
-  if (activeWorkspaceView === "setup") {
-    const workType = activeWorkType();
-    const connector = activeConnector();
-    workspaceKicker.textContent = "Start here";
-    chatTitle.textContent = "Set up a new automation flow";
-    chatMeta.innerHTML = [
-      connector?.name ? `Source: ${connector.name}` : "",
-      workType?.name ? `Flow: ${workType.name}` : "",
-      workType?.publishState ? `Status: ${workType.publishState}` : "",
-    ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
+  if (activeView === "setup") {
+    $("workspaceKicker").textContent = "New setup";
+    $("chatTitle").textContent = "What do you want Knockdown to handle?";
+    $("chatMeta").innerHTML = [
+      `Source: ${activeSource()?.name || "Choose one"}`,
+      `Flow: ${activeFlow()?.name || "Choose one"}`,
+    ].map((item) => `<span>${item}</span>`).join("");
     return;
   }
 
-  if (activeWorkspaceView === "monitor") {
-    workspaceKicker.textContent = "Live status";
-    chatTitle.textContent = "Monitor automation health";
-    chatMeta.innerHTML = "<span>See active runs, routing reasons, and problems that need attention.</span>";
+  if (activeView === "monitor") {
+    $("workspaceKicker").textContent = "Monitor";
+    $("chatTitle").textContent = "Automation health";
+    $("chatMeta").innerHTML = "<span>Active runs and items that need attention.</span>";
     return;
   }
 
   const run = activeRun();
-  const workType = workTypeById(run?.workTypeId);
-  workspaceKicker.textContent = "Selected run";
-  chatTitle.textContent = run ? `${run.id} · ${run.source}` : "No run selected";
-  chatMeta.innerHTML = [
-    workType?.name,
+  const flow = workTypes.find((item) => item.id === run?.workTypeId);
+  $("workspaceKicker").textContent = "Run";
+  $("chatTitle").textContent = run ? `${run.id} · ${run.source}` : "No run selected";
+  $("chatMeta").innerHTML = [
+    flow?.name,
     run?.status ? `Status: ${run.status}` : "",
-    run?.owner ? `Owner: ${run.owner}` : "",
-    run?.approval ? run.approval : "",
+    run?.next ? `Next: ${run.next}` : "",
   ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
 }
 
-function renderOverviewStrip() {
-  overviewStrip.innerHTML = "";
-  queueHealth.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "overview-card";
-    card.innerHTML = `
-      <div class="overview-label">${item.label}</div>
-      <div class="overview-value">${item.value}</div>
-      <div class="overview-note">${item.note}</div>
-    `;
-    overviewStrip.appendChild(card);
-  });
-}
+function renderSelects() {
+  const sourceSelect = $("sourceSelect");
+  const flowSelect = $("flowSelect");
 
-function renderRunRail() {
-  historyList.innerHTML = "";
-  visibleRuns().forEach((run) => {
-    const button = document.createElement("button");
-    button.className = `history-item${run.id === activeRunId ? " active" : ""}`;
-    button.type = "button";
-    button.innerHTML = `
-      <div class="history-item-header">
-        <div class="history-item-title">${run.id}</div>
-        <div class="history-item-time">${run.duration}</div>
-      </div>
-      <div class="history-item-meta">
-        <span class="history-item-source">${run.source}</span>
-        <span class="history-item-stage">${run.stage}</span>
-      </div>
-    `;
-    button.addEventListener("click", () => {
-      activeRunId = run.id;
-      activeWorkTypeId = run.workTypeId || activeWorkTypeId;
-      setWorkspaceView("runs");
-      renderAll();
-      closePanelsOnMobile();
-    });
-    historyList.appendChild(button);
-  });
+  sourceSelect.innerHTML = connectors.map((source) => (
+    `<option value="${source.id}"${source.id === activeSourceId ? " selected" : ""}>${source.name}</option>`
+  )).join("");
 
-  if (!historyList.children.length) {
-    historyList.innerHTML = '<div class="history-empty">No runs match the current search or filter.</div>';
-  }
-}
-
-function renderTemplates() {
-  templateList.innerHTML = "";
-  visibleTemplates().forEach((template) => {
-    const button = document.createElement("button");
-    button.className = "template-card";
-    button.type = "button";
-    button.innerHTML = `
-      <span class="template-title">${template.title}</span>
-      <span class="template-meta">${template.meta}</span>
-    `;
-    button.addEventListener("click", () => {
-      createTemplateRun(template);
-      closePanelsOnMobile();
-    });
-    templateList.appendChild(button);
-  });
-
-  if (!templateList.children.length) {
-    templateList.innerHTML = '<div class="history-empty">No starter examples match the current search.</div>';
-  }
+  flowSelect.innerHTML = workTypes.map((flow) => (
+    `<option value="${flow.id}"${flow.id === activeFlowId ? " selected" : ""}>${flow.name}</option>`
+  )).join("");
 }
 
 function renderSetup() {
-  const connector = activeConnector();
-  const workType = activeWorkType();
-  const profile = profileForWorkType(workType);
+  const source = activeSource();
+  const flow = activeFlow();
 
-  setupSourceValue.textContent = connector?.name || "Choose a source";
-  setupFlowValue.textContent = workType?.name || "Choose a flow";
-  setupPublishValue.textContent = workType?.publishState || "Draft";
+  renderSelects();
 
-  setupIntroList.innerHTML = "";
-  simpleGlossary.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${item.title}</div>
-      <div class="playbook-detail">${item.detail}</div>
-    `;
-    setupIntroList.appendChild(row);
-  });
+  $("workTypeRegistry").innerHTML = "";
+  workTypes
+    .filter((flowItem) => matches([flowItem.name, flowItem.summary, flowItem.approvalPosture]))
+    .forEach((flowItem) => {
+      const button = document.createElement("button");
+      button.className = `template-tile${flowItem.id === activeFlowId ? " active" : ""}`;
+      button.type = "button";
+      button.innerHTML = `
+        <div class="tile-top">
+          <span>${flowItem.name}</span>
+          <span class="status-dot ${statusClass(flowItem.status)}">${flowItem.status}</span>
+        </div>
+        <p>${flowItem.summary}</p>
+      `;
+      button.addEventListener("click", () => {
+        activeFlowId = flowItem.id;
+        renderAll();
+      });
+      $("workTypeRegistry").appendChild(button);
+    });
 
-  setupFocus.innerHTML = `
-    <div class="focus-kicker">Selected setup</div>
-    <div class="focus-title-row">
-      <h3 class="focus-title">${workType?.name || "Choose a flow"}</h3>
-      <span class="connector-status ${connectorStatusClass(workType?.status)}">${workType?.status || "DRAFT"}</span>
-    </div>
-    <div class="focus-meta">${workType?.summary || "Pick a source and a flow template to begin."}</div>
-    <div class="focus-stats">
-      <div class="focus-stat">
-        <span>Source</span>
-        <strong>${connector?.name || "n/a"}</strong>
-      </div>
-      <div class="focus-stat">
-        <span>Profile</span>
-        <strong>${profile?.name || "n/a"}</strong>
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Main steps</div>
-      <div class="focus-list">
-        ${(workType?.playbooks || []).map((item) => `<div class="focus-list-item">${item}</div>`).join("")}
+  $("setupChecklistList").innerHTML = [
+    ["Connect source", source?.name || "Choose a source"],
+    ["Choose flow", flow?.name || "Choose a flow"],
+    ["Add secrets", "Repo, runner, or runtime-injected"],
+    ["Test first", flow?.publishState || "Dry-run before real updates"],
+  ].map(([title, detail]) => `
+    <div class="check-item">
+      <span class="check-icon">✓</span>
+      <div>
+        <strong>${title}</strong>
+        <p>${detail}</p>
       </div>
     </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Approval</div>
-      <div class="focus-meta">${workType?.approvalPosture || "n/a"}</div>
+  `).join("");
+
+  $("setupFocus").innerHTML = `
+    <div class="selected-row">
+      <span>Source</span>
+      <strong>${source?.name || "Not selected"}</strong>
+    </div>
+    <div class="selected-row">
+      <span>Flow</span>
+      <strong>${flow?.name || "Not selected"}</strong>
+    </div>
+    <div class="selected-row">
+      <span>Safety</span>
+      <strong>${flow?.approvalPosture || "Dry-run first"}</strong>
     </div>
   `;
 
-  setupSourceCatalog.innerHTML = "";
-  visibleConnectors().forEach((item) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `playbook-row${item.id === activeConnectorId ? " active-card" : ""}`;
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${item.name}</div>
-          <div class="playbook-meta">${item.mode}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
-      </div>
-      <div class="playbook-detail">${item.detail}</div>
-    `;
-    card.addEventListener("click", () => {
-      activeConnectorId = item.id;
-      renderSetup();
-      renderHelpPanel();
-    });
-    setupSourceCatalog.appendChild(card);
-  });
-
-  workTypeRegistry.innerHTML = "";
-  visibleWorkTypes().forEach((item) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `playbook-row${item.id === activeWorkTypeId ? " active-card" : ""}`;
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${item.name}</div>
-          <div class="playbook-meta">${item.defaultRunMode}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
-      </div>
-      <div class="playbook-detail">${item.summary}</div>
-    `;
-    card.addEventListener("click", () => {
-      activeWorkTypeId = item.id;
-      renderSetup();
-    });
-    workTypeRegistry.appendChild(card);
-  });
-
-  setupChecklistList.innerHTML = "";
-  onboardingWorkflow.slice(0, 5).forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${index + 1}. ${item.step}</div>
-          <div class="playbook-meta">${item.owner}</div>
-        </div>
-        <span class="focus-chip">Do this</span>
-      </div>
-      <div class="playbook-detail">${item.detail}</div>
-    `;
-    setupChecklistList.appendChild(row);
-  });
-  [
-    { label: "Dry-run with sample item", detail: "Test the flow before allowing real writeback." },
-    { label: "Review writeback safety", detail: workType?.approvalPosture || "Check which updates are allowed." },
-  ].forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${item.label}</div>
-      <div class="playbook-detail">${item.detail}</div>
-    `;
-    setupChecklistList.appendChild(row);
-  });
-
-  setupConfigList.innerHTML = "";
-  [...configSources, ...secretBindings.map((item) => ({
+  $("setupConfigList").innerHTML = [...configSources.slice(0, 3), ...secretBindings.slice(0, 2).map((item) => ({
     label: item.label,
     detail: item.detail,
-  }))].forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${item.label}</div>
-      <div class="playbook-detail">${item.detail}</div>
+  }))].map((item) => `
+    <div class="compact-row">
+      <strong>${item.label}</strong>
+      <span>${item.detail}</span>
+    </div>
+  `).join("");
+}
+
+function renderRunRail() {
+  $("historyList").innerHTML = "";
+  visibleRuns().forEach((run) => {
+    const button = document.createElement("button");
+    button.className = `run-link${run.id === activeRunId ? " active" : ""}`;
+    button.type = "button";
+    button.innerHTML = `
+      <span>${run.id}</span>
+      <small>${run.stage} · ${run.duration}</small>
     `;
-    setupConfigList.appendChild(row);
+    button.addEventListener("click", () => {
+      activeRunId = run.id;
+      activeFlowId = run.workTypeId || activeFlowId;
+      setView("runs");
+      renderAll();
+    });
+    $("historyList").appendChild(button);
+  });
+
+  if (!$("historyList").children.length) {
+    $("historyList").innerHTML = '<div class="empty-state">No runs found.</div>';
+  }
+}
+
+function renderTemplateRail() {
+  $("templateList").innerHTML = "";
+  templates.filter((template) => matches([template.title, template.meta, template.prompt])).forEach((template) => {
+    const button = document.createElement("button");
+    button.className = "template-link";
+    button.type = "button";
+    button.innerHTML = `
+      <span>${template.title}</span>
+      <small>${template.meta}</small>
+    `;
+    button.addEventListener("click", () => createTemplateRun(template));
+    $("templateList").appendChild(button);
   });
 }
 
 function renderRuns() {
   const run = activeRun();
   const thread = activeThread();
-  const workType = workTypeById(run?.workTypeId);
+  const flow = workTypes.find((item) => item.id === run?.workTypeId);
 
-  profileValue.textContent = workType?.name || "Unknown flow";
-  sourceValue.textContent = run?.source || "No source";
-  stageValue.textContent = run?.stage || "Idle";
-  nextActionValue.textContent = run?.next || "Select a run";
+  $("runTitle").textContent = run ? `${run.id} · ${run.source}` : "No run selected";
+  $("runMeta").innerHTML = [
+    flow?.name,
+    run?.status ? `Status: ${run.status}` : "",
+    run?.owner ? `Owner: ${run.owner}` : "",
+  ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
 
-  insightGrid.innerHTML = "";
-  (thread?.insights || []).forEach((item) => {
-    const card = document.createElement("div");
-    card.className = `insight-card ${insightToneClass(item.tone)}`;
-    card.innerHTML = `
-      <div class="insight-label">${item.label}</div>
-      <div class="insight-value">${item.value}</div>
-    `;
-    insightGrid.appendChild(card);
-  });
-
-  runSummaryList.innerHTML = "";
-  [
-    ["Run", run?.id || "n/a"],
-    ["Owner", run?.owner || "n/a"],
-    ["Current step", run?.stage || "n/a"],
-    ["Approval", run?.approval || "n/a"],
+  $("runSummaryList").innerHTML = [
+    ["Flow", flow?.name || "Unknown"],
+    ["Current step", run?.stage || "Idle"],
     ["Risk", run?.risk || "n/a"],
-    ["Next action", run?.next || "n/a"],
-  ].forEach(([label, value]) => {
-    const row = document.createElement("div");
-    row.className = "summary-row";
-    row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
-    runSummaryList.appendChild(row);
-  });
+    ["Next", run?.next || "n/a"],
+  ].map(([label, value]) => `
+    <div class="summary-row">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `).join("");
 
-  runDependencyList.innerHTML = "";
-  [
-    `Flow chosen: ${workType?.name || "n/a"}`,
-    `Triggered by: ${run?.trigger || "n/a"}`,
-    `Source systems: ${formatList(run?.connectors || [])}`,
-    `Outputs: ${formatList(run?.outputs || [])}`,
-    `Summary: ${run?.summary || "n/a"}`,
-  ].forEach((text) => {
-    const row = document.createElement("div");
-    row.className = "focus-list-item";
-    row.textContent = text;
-    runDependencyList.appendChild(row);
-  });
-
-  timelineList.innerHTML = "";
-  (thread?.timeline || []).forEach((item) => {
-    const row = document.createElement("div");
-    row.className = `timeline-item ${timelineStateClass(item.state)}`;
-    row.innerHTML = `
+  $("timelineList").innerHTML = (thread?.timeline || []).map((item) => `
+    <div class="timeline-item ${item.state}">
       <div class="timeline-marker"></div>
-      <div class="timeline-copy">
+      <div>
         <div class="timeline-stage-row">
-          <div class="timeline-stage">${item.stage}</div>
-          <div class="timeline-state">${item.state}</div>
+          <strong>${item.stage}</strong>
+          <span>${item.state}</span>
         </div>
-        <div class="timeline-summary">${item.summary}</div>
+        <p>${item.summary}</p>
       </div>
-    `;
-    timelineList.appendChild(row);
-  });
+    </div>
+  `).join("");
 
-  messageStream.innerHTML = "";
-  (thread?.messages || []).forEach((message) => {
-    const article = document.createElement("article");
-    article.className = `message ${message.role}`;
-    article.innerHTML = `
+  $("messageStream").innerHTML = (thread?.messages || []).map((message) => `
+    <article class="message ${message.role}">
       <div class="message-top">
-        <div>
-          <div class="message-author">${message.author}</div>
-          <div class="message-meta">${message.timestamp}</div>
-        </div>
-        <div class="message-chips">
-          ${(message.chips || []).map((chip) => `<span class="message-chip">${chip}</span>`).join("")}
-        </div>
+        <strong>${message.author}</strong>
+        <span>${message.timestamp}</span>
       </div>
       <div class="message-body">${message.body}</div>
-    `;
-    messageStream.appendChild(article);
-  });
+    </article>
+  `).join("");
 }
 
 function renderMonitor() {
-  runBoard.innerHTML = "";
-  liveRuns
-    .filter((run) => matchesSearch([run.id, run.source, run.status, run.stage, run.next]))
-    .forEach((run) => {
-      const workType = workTypeById(run.workTypeId);
-      const card = document.createElement("div");
-      card.className = "run-card";
-      card.innerHTML = `
-        <div class="run-top">
-          <div>
-            <div class="playbook-name">${run.id}</div>
-            <div class="playbook-meta">${workType?.name || "Unknown flow"} • ${run.source}</div>
-          </div>
-          <span class="connector-status ${connectorStatusClass(run.status)}">${run.status}</span>
+  $("runBoard").innerHTML = liveRuns
+    .filter((run) => matches([run.id, run.source, run.status, run.stage, run.next]))
+    .map((run) => `
+      <button class="monitor-row" data-run-id="${run.id}" type="button">
+        <div>
+          <strong>${run.id}</strong>
+          <span>${run.source}</span>
         </div>
-        <div class="run-meta">Step: ${run.stage} • Duration: ${run.duration} • Risk: ${run.risk}</div>
-        <div class="playbook-detail">${run.next}</div>
-      `;
-      card.addEventListener("click", () => {
-        activeRunId = run.id;
-        activeWorkTypeId = run.workTypeId || activeWorkTypeId;
-        setWorkspaceView("runs");
-        renderAll();
-      });
-      runBoard.appendChild(card);
-    });
+        <span class="status-dot ${statusClass(run.status)}">${run.status}</span>
+      </button>
+    `).join("");
 
-  decisionTraceList.innerHTML = "";
-  decisionTrace
-    .filter((item) => matchesSearch([item.title, ...(item.details || [])]))
-    .forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "route-row";
-      row.innerHTML = `
-        <div class="playbook-name">${item.title}</div>
-        <div class="focus-list">
-          ${(item.details || []).map((detail) => `<div class="focus-list-item">${detail}</div>`).join("")}
-        </div>
-      `;
-      decisionTraceList.appendChild(row);
+  Array.from($("runBoard").querySelectorAll?.("[data-run-id]") || []).forEach((button) => {
+    button.addEventListener("click", () => {
+      activeRunId = button.dataset.runId;
+      setView("runs");
+      renderAll();
     });
+  });
 
-  failureHeatmapList.innerHTML = "";
-  failureHeatmap
-    .filter((item) => matchesSearch([item.area, item.value, item.note]))
-    .forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "heatmap-row";
-      row.innerHTML = `
-        <div class="playbook-title-row">
-          <div>
-            <div class="playbook-name">${item.area}</div>
-            <div class="playbook-meta">${item.value}</div>
-          </div>
-        </div>
-        <div class="playbook-detail">${item.note}</div>
-      `;
-      failureHeatmapList.appendChild(row);
-    });
+  $("decisionTrace").innerHTML = decisionTrace.map((trace) => `
+    <div class="compact-row">
+      <strong>${trace.title}</strong>
+      <span>${(trace.details || []).join(" ")}</span>
+    </div>
+  `).join("");
+
+  $("failureHeatmap").innerHTML = failureHeatmap.map((item) => `
+    <div class="compact-row">
+      <strong>${item.area}</strong>
+      <span>${item.value}: ${item.note}</span>
+    </div>
+  `).join("");
 }
 
-function renderHelpPanel() {
-  helpGlossary.innerHTML = "";
-  simpleGlossary.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${item.title}</div>
-      <div class="playbook-detail">${item.detail}</div>
-    `;
-    helpGlossary.appendChild(row);
-  });
+function renderDetails() {
+  const source = activeSource();
 
-  connectorList.innerHTML = "";
-  visibleConnectors().forEach((item) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `connector-card${item.id === activeConnectorId ? " active" : ""}`;
-    card.innerHTML = `
-      <div class="connector-line">
-        <div class="connector-name">${item.name}</div>
-        <span class="connector-status ${connectorStatusClass(item.status)}">${item.status}</span>
-      </div>
-      <div class="connector-detail">${item.detail}</div>
-    `;
-    card.addEventListener("click", () => {
-      activeConnectorId = item.id;
-      renderSetup();
-      renderHelpPanel();
+  $("connectorList").innerHTML = connectors.map((connector) => `
+    <button class="source-pill${connector.id === activeSourceId ? " active" : ""}" data-source-id="${connector.id}" type="button">
+      ${connector.name}
+    </button>
+  `).join("");
+
+  Array.from($("connectorList").querySelectorAll?.("[data-source-id]") || []).forEach((button) => {
+    button.addEventListener("click", () => {
+      activeSourceId = button.dataset.sourceId;
+      renderAll();
     });
-    connectorList.appendChild(card);
   });
 
-  const connector = activeConnector();
-  connectorFocus.innerHTML = connector ? `
-    <div class="focus-kicker">Selected source</div>
-    <div class="focus-title-row">
-      <h3 class="focus-title">${connector.name}</h3>
-      <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
+  $("connectorFocus").innerHTML = source ? `
+    <div class="compact-row">
+      <strong>${source.mode}</strong>
+      <span>${source.detail}</span>
     </div>
-    <div class="focus-meta">${connector.mode}</div>
-    <div class="focus-stats">
-      <div class="focus-stat">
-        <span>Health</span>
-        <strong>${connector.health}</strong>
-      </div>
-      <div class="focus-stat">
-        <span>Latency</span>
-        <strong>${connector.latency}</strong>
-      </div>
+    <div class="chip-row">
+      ${(source.capabilities || []).slice(0, 4).map((capability) => `<span>${capability}</span>`).join("")}
     </div>
-    <div class="focus-section">
-      <div class="focus-section-title">What it can do</div>
-      <div class="focus-chip-row">
-        ${(connector.capabilities || []).map((item) => `<span class="focus-chip">${item}</span>`).join("")}
-      </div>
-    </div>
-  ` : '<div class="history-empty">No source selected.</div>';
-
-  providerGrid.innerHTML = "";
-  providers.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "provider-card";
-    card.innerHTML = `
-      <div class="provider-name">${item.name}</div>
-      <div class="provider-source">${item.source}</div>
-    `;
-    providerGrid.appendChild(card);
-  });
-
-  policyList.innerHTML = "";
-  policies.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `<span>${item.label}</span><span class="policy-value">${item.value}</span>`;
-    policyList.appendChild(row);
-  });
-
-  secretBindingsList.innerHTML = "";
-  secretBindings.forEach((item) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "secret-row";
-    wrapper.innerHTML = `
-      <div class="policy-row">
-        <span>${item.label}</span>
-        <span class="policy-value">${item.value}</span>
-      </div>
-      <div class="policy-subtext">${item.detail}</div>
-    `;
-    secretBindingsList.appendChild(wrapper);
-  });
+  ` : "";
 }
 
 function createTemplateRun(template) {
-  const matchingWorkType = workTypes.find((item) => String(item.profileId).toLowerCase() === String(template.profile).toLowerCase()) || workTypes[0];
+  const flow = workTypes.find((item) => item.profileId.toLowerCase() === template.profile.toLowerCase()) || activeFlow();
   const runNumber = liveRuns.length + 1;
   const runId = `kd-run-${170 + runNumber}`;
   const threadId = `thread-${runNumber}`;
 
   chats.unshift({
     id: threadId,
-    title: `${template.title} ${runNumber}`,
-    source: template.sourceGraph,
-    time: "just now",
-    stage: template.stage,
-    profile: template.profile,
-    sourceGraph: template.sourceGraph,
-    workflowStage: template.stage,
-    meta: ["Example started", "Awaiting run launch", "Thread attached to run"],
-    insights: [
-      { label: "Confidence", value: "Pending", tone: "neutral" },
-      { label: "Risk", value: "Unknown", tone: "warn" },
-      { label: "Validation", value: "Not planned", tone: "neutral" },
-      { label: "Writeback", value: "Not armed", tone: "neutral" },
-    ],
     timeline: [
-      { stage: "Intake", state: "active", summary: "Run created from a starter example." },
-      { stage: "Routing", state: "pending", summary: "The best flow will be confirmed on launch." },
-      { stage: "Execution", state: "pending", summary: "Execution starts after operator confirmation." },
+      { stage: "Intake", state: "active", summary: "Run created from a starter template." },
+      { stage: "Test", state: "pending", summary: "Dry-run will validate routing and secrets." },
     ],
     messages: [
       {
         role: "system",
         author: "Run Bootstrap",
         timestamp: "now",
-        chips: ["Starter example", template.profile],
         body: `<p>${template.prompt}</p>`,
       },
     ],
@@ -752,186 +362,93 @@ function createTemplateRun(template) {
 
   liveRuns.unshift({
     id: runId,
-    workTypeId: matchingWorkType.id,
+    workTypeId: flow.id,
     threadId,
     status: "WAITING",
-    playbook: matchingWorkType.playbooks?.[0] || "flow-start",
     stage: "intake",
     source: `Direct / ${template.title}`,
     duration: "0m",
     risk: "Medium",
-    next: "Launch the test run",
+    next: "Start the dry-run",
     owner: "Developer",
-    approval: "Waiting to start",
-    summary: "New test run created from an example.",
-    outputs: ["Run created"],
-    connectors: matchingWorkType.connectorIds || [],
-    trigger: "manual.launch",
   });
 
   activeRunId = runId;
-  activeWorkTypeId = matchingWorkType.id;
-  setWorkspaceView("runs");
+  activeFlowId = flow.id;
+  setView("runs");
   renderAll();
 }
 
-function createNewRun() {
-  createTemplateRun(templates[0] || {
-    title: "Ad hoc work item",
-    profile: "Task",
-    sourceGraph: "Direct input",
-    stage: "Intake",
-    prompt: "Start a dry-run and choose the best flow.",
-  });
-}
-
-function appendSystemNote(chip, body) {
+function addRunNote() {
   const thread = activeThread();
-  if (!thread) return;
-
-  const now = new Date();
-  const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  thread.messages.push({
-    role: "agent",
-    author: "Control Plane",
-    timestamp,
-    chips: [chip],
-    body: `<p>${body}</p>`,
-  });
-}
-
-function appendRunNote() {
-  const thread = activeThread();
-  const text = composerInput.value.trim();
+  const text = $("composerInput").value.trim();
   if (!thread || !text) return;
 
-  const now = new Date();
-  const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   thread.messages.push({
     role: "user",
     author: "Developer",
-    timestamp,
-    chips: ["Note"],
+    timestamp: "now",
     body: `<p>${text.replace(/\n/g, "<br>")}</p>`,
   });
-
-  thread.messages.push({
-    role: "agent",
-    author: "Run Analysis",
-    timestamp,
-    chips: ["Run updated"],
-    body: "<p>The note was added to the run thread. In a live system this would update the run summary and audit trail.</p>",
-  });
-
   renderRuns();
-  renderRunRail();
 }
 
 function attachRunContext() {
   const run = activeRun();
-  const workType = workTypeById(run?.workTypeId);
   if (!run) return;
-  composerInput.value = `${composerInput.value.trim()}\n\nRun context:\n- Run id: ${run.id}\n- Flow: ${workType?.name || "Unknown"}\n- Step: ${run.stage}\n- Next: ${run.next}`;
-}
-
-function handleLaunchRun() {
-  if (!activeRun()) {
-    createNewRun();
-    return;
-  }
-  appendSystemNote("Launch requested", "The selected run has been staged for execution.");
-  setWorkspaceView("runs");
-  renderRuns();
-}
-
-function handleExportNotes() {
-  const run = activeRun();
-  const workType = workTypeById(run?.workTypeId);
-  if (!run) return;
-  composerInput.value = [
-    `Run: ${run.id}`,
-    `Flow: ${workType?.name || "n/a"}`,
-    `Source: ${run.source}`,
-    `Step: ${run.stage}`,
-    `Next: ${run.next}`,
-    "",
-    composerInput.value,
-  ].join("\n").trim();
-  appendSystemNote("Notes exported", "A short run summary was added to the notes box.");
-  renderRuns();
-}
-
-function handlePauseRun() {
-  const run = activeRun();
-  if (!run) return;
-  run.status = "WAITING";
-  run.next = "Resume required";
-  run.approval = "Paused by developer";
-  appendSystemNote("Run paused", "The run is paused until you resume it.");
-  renderAll();
-}
-
-function handleSwitchWorkType() {
-  const story = workTypes.find((item) => item.id === "story-delivery");
-  if (!story) return;
-  activeWorkTypeId = story.id;
-  setWorkspaceView("setup");
-  renderAll();
-}
-
-function handleOpenSetup() {
-  setWorkspaceView("setup");
-  renderHeader();
-}
-
-function handleOpenHelp() {
-  connectorPanel.classList.add("open");
-  if (activeWorkspaceView === "runs") {
-    appendSystemNote("Help opened", "The help panel is focused on source details, helpers, and safety rules.");
-    renderRuns();
-  }
-}
-
-function closePanelsOnMobile() {
-  if (window.innerWidth <= 980) {
-    historyPanel.classList.remove("open");
-    connectorPanel.classList.remove("open");
-  }
+  $("composerInput").value = `${$("composerInput").value.trim()}\n\nRun context:\n- ${run.id}\n- ${run.source}\n- ${run.stage}\n- ${run.next}`;
 }
 
 function renderAll() {
-  ensureSelections();
   renderHeader();
-  renderOverviewStrip();
-  renderRunRail();
-  renderTemplates();
+  renderSelects();
   renderSetup();
+  renderRunRail();
+  renderTemplateRail();
   renderRuns();
   renderMonitor();
-  renderHelpPanel();
+  renderDetails();
 }
 
-newRunButton.addEventListener("click", createNewRun);
-launchRunButton.addEventListener("click", handleLaunchRun);
-exportBriefButton.addEventListener("click", handleExportNotes);
-pauseRunButton.addEventListener("click", handlePauseRun);
-attachContextButton.addEventListener("click", attachRunContext);
-sendButton.addEventListener("click", appendRunNote);
-connectSourceAdapterButton.addEventListener("click", handleOpenSetup);
-switchWorkTypeButton.addEventListener("click", handleSwitchWorkType);
-contextDiagnosticsButton.addEventListener("click", handleOpenHelp);
+function renderSelects() {
+  $("sourceSelect").innerHTML = connectors.map((source) => (
+    `<option value="${source.id}"${source.id === activeSourceId ? " selected" : ""}>${source.name}</option>`
+  )).join("");
+  $("flowSelect").innerHTML = workTypes.map((flow) => (
+    `<option value="${flow.id}"${flow.id === activeFlowId ? " selected" : ""}>${flow.name}</option>`
+  )).join("");
+}
 
-setupShortcut.addEventListener("click", () => setWorkspaceView("setup"));
-runsShortcut.addEventListener("click", () => setWorkspaceView("runs"));
-monitorShortcut.addEventListener("click", () => setWorkspaceView("monitor"));
-
-workspaceTabs.forEach((tab) => {
-  tab.addEventListener("click", () => setWorkspaceView(tab.dataset.view));
+$("sourceSelect").addEventListener("change", (event) => {
+  activeSourceId = event.target.value;
+  renderAll();
 });
 
-globalSearchInput.addEventListener("input", (event) => {
-  searchTerm = event.target.value.trim().toLowerCase();
+$("flowSelect").addEventListener("change", (event) => {
+  activeFlowId = event.target.value;
   renderAll();
+});
+
+$("newRunButton").addEventListener("click", () => createTemplateRun(templates[0]));
+$("launchRunButton").addEventListener("click", () => createTemplateRun(templates[0]));
+$("sendButton").addEventListener("click", addRunNote);
+$("attachContextButton").addEventListener("click", attachRunContext);
+$("exportBriefButton").addEventListener("click", attachRunContext);
+$("pauseRunButton").addEventListener("click", () => {
+  const run = activeRun();
+  if (run) {
+    run.status = "WAITING";
+    run.next = "Resume when ready";
+    renderAll();
+  }
+});
+
+$("setupShortcut").addEventListener("click", () => setView("setup"));
+$("runsShortcut").addEventListener("click", () => setView("runs"));
+$("monitorShortcut").addEventListener("click", () => setView("monitor"));
+
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.view));
 });
 
 filterChips.forEach((chip) => {
@@ -939,26 +456,16 @@ filterChips.forEach((chip) => {
     activeFilter = chip.dataset.filter || "all";
     filterChips.forEach((button) => button.classList.toggle("active", button === chip));
     renderRunRail();
-    renderMonitor();
   });
 });
 
-historyToggle.addEventListener("click", () => {
-  historyPanel.classList.toggle("open");
-  connectorPanel.classList.remove("open");
+searchInput.addEventListener("input", (event) => {
+  searchTerm = event.target.value.trim().toLowerCase();
+  renderAll();
 });
 
-connectorToggle.addEventListener("click", () => {
-  connectorPanel.classList.toggle("open");
-  historyPanel.classList.remove("open");
-});
-
-window.addEventListener("resize", () => {
-  if (window.innerWidth > 980) {
-    historyPanel.classList.remove("open");
-    connectorPanel.classList.remove("open");
-  }
-});
+$("historyToggle").addEventListener("click", () => $("historyPanel").classList.toggle("open"));
+$("connectorToggle").addEventListener("click", () => $("connectorPanel").classList.toggle("open"));
 
 renderAll();
-setWorkspaceView(activeWorkspaceView);
+setView(activeView);

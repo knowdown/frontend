@@ -104,15 +104,14 @@ const createById = (id, tagName = "div") => {
   "overviewStrip",
   "historyList",
   "templateList",
-  "setupSourceValue",
-  "setupFlowValue",
-  "setupPublishValue",
-  "setupIntroList",
+  "sourceSelect",
+  "flowSelect",
   "setupFocus",
-  "setupSourceCatalog",
   "workTypeRegistry",
   "setupChecklistList",
   "setupConfigList",
+  "runTitle",
+  "runMeta",
   "profileValue",
   "sourceValue",
   "stageValue",
@@ -156,6 +155,9 @@ const createById = (id, tagName = "div") => {
   "monitorTab",
 ].forEach((id) => createById(
   id,
+  id === "sourceSelect" ||
+  id === "flowSelect"
+    ? "select" :
   id.endsWith("Button") ||
   id.endsWith("Shortcut") ||
   id.endsWith("Tab") ||
@@ -188,11 +190,11 @@ filterWaiting.classList.add("filter-chip");
 const filterChips = [filterAll, filterRunning, filterWaiting];
 
 elements.get("setupTab").dataset.view = "setup";
-elements.get("setupTab").classList.add("workspace-tab", "active");
+elements.get("setupTab").classList.add("primary-nav", "active");
 elements.get("runsTab").dataset.view = "runs";
-elements.get("runsTab").classList.add("workspace-tab");
+elements.get("runsTab").classList.add("primary-nav");
 elements.get("monitorTab").dataset.view = "monitor";
-elements.get("monitorTab").classList.add("workspace-tab");
+elements.get("monitorTab").classList.add("primary-nav");
 const workspaceTabs = [
   elements.get("setupTab"),
   elements.get("runsTab"),
@@ -209,7 +211,7 @@ const documentStub = {
   },
   querySelectorAll(selector) {
     if (selector === ".filter-chip") return filterChips;
-    if (selector === ".workspace-tab") return workspaceTabs;
+    if (selector === ".primary-nav") return workspaceTabs;
     return [];
   },
   createElement(tagName) {
@@ -241,25 +243,24 @@ function assert(condition, message) {
 }
 
 assert(elements.get("setupPanel").hidden === false, "Setup should be the default view");
-assert(elements.get("chatTitle").textContent.includes("Set up"), "Header should explain the setup-first experience");
-assert(elements.get("setupIntroList").children.length >= 1, "Setup glossary should render");
-assert(elements.get("setupSourceCatalog").children.length >= 1, "Source systems should render");
+assert(elements.get("chatTitle").textContent.includes("What do you want"), "Header should explain the setup-first experience");
+assert(elements.get("sourceSelect").innerHTML.includes("ServiceNow"), "Source selector should render");
+assert(elements.get("flowSelect").innerHTML.includes("Defect Delivery"), "Flow selector should render");
 assert(elements.get("workTypeRegistry").children.length >= 1, "Flow templates should render");
 
-const secondSource = elements.get("setupSourceCatalog").children[1];
-assert(secondSource, "Expected a second source system");
-secondSource.click();
-assert(elements.get("setupSourceValue").textContent.length > 0, "Selecting a source should update setup banner");
+elements.get("sourceSelect").value = "github-issues";
+elements.get("sourceSelect").dispatchEvent({ type: "change", target: elements.get("sourceSelect") });
+assert(elements.get("setupFocus").innerHTML.includes("GitHub"), "Selecting a source should update setup summary");
 
 const secondFlow = elements.get("workTypeRegistry").children[1];
 assert(secondFlow, "Expected a second flow template");
 secondFlow.click();
-assert(elements.get("setupFlowValue").textContent.length > 0, "Selecting a flow should update setup banner");
+assert(elements.get("setupFocus").innerHTML.includes("Story Delivery"), "Selecting a flow should update setup summary");
 
 elements.get("runsShortcut").click();
 assert(elements.get("runsPanel").hidden === false, "Runs view should open from shortcut");
-assert(elements.get("runSummaryList").children.length >= 1, "Run summary should render");
-assert(elements.get("messageStream").children.length >= 1, "Run thread should render");
+assert(elements.get("runSummaryList").innerHTML.includes("Current step"), "Run summary should render");
+assert(elements.get("messageStream").innerHTML.includes("Run"), "Run thread should render");
 
 elements.get("attachContextButton").click();
 assert(elements.get("composerInput").value.includes("Run context:"), "Attach context should enrich notes");
@@ -270,11 +271,11 @@ assert(elements.get("messageStream").children.length >= previousMessages, "Addin
 
 elements.get("monitorShortcut").click();
 assert(elements.get("monitorPanel").hidden === false, "Monitor view should open");
-assert(elements.get("runBoard").children.length >= 1, "Monitor runs should render");
+assert(elements.get("runBoard").innerHTML.includes("kd-run"), "Monitor runs should render");
 
 globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
-assert(elements.get("runBoard").children.length >= 1 || elements.get("historyList").children.length >= 1, "Search should preserve matching content");
+assert(elements.get("runBoard").innerHTML.includes("kd-run") || elements.get("historyList").children.length >= 1, "Search should preserve matching content");
 
 globalSearchInput.value = "";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
@@ -285,8 +286,5 @@ const beforeNewRunCount = elements.get("historyList").children.length;
 elements.get("newRunButton").click();
 assert(elements.get("historyList").children.length >= beforeNewRunCount, "Starting from an example should keep runs populated");
 assert(elements.get("runsPanel").hidden === false, "New example run should open the runs view");
-
-elements.get("contextDiagnosticsButton").click();
-assert(elements.get("connectorPanel").classList.contains("open"), "Help panel should open from the runs view");
 
 console.log("frontend smoke test passed");
