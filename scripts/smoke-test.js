@@ -116,10 +116,6 @@ const ids = [
   "timelineList",
   "runDecisionTrace",
   "messageStream",
-  "runOutputList",
-  "runApprovalList",
-  "runConnectorBindings",
-  "runArtifactList",
   "workTypeRegistry",
   "workTypeFocus",
   "workTypeRouting",
@@ -139,8 +135,6 @@ const ids = [
   "routingMatrix",
   "workflowBindings",
   "chainGraph",
-  "secretCatalog",
-  "configSourceMatrix",
   "runBoard",
   "decisionTrace",
   "failureHeatmap",
@@ -173,12 +167,9 @@ const ids = [
   "operateOverviewPanel",
   "operateTimelinePanel",
   "operateThreadPanel",
-  "operateArtifactsPanel",
   "buildWorkTypesPanel",
-  "buildOnboardingPanel",
+  "buildPublishPanel",
   "buildConnectorsPanel",
-  "buildPlaybooksPanel",
-  "buildSecretsPanel",
   "operateTab",
   "buildTab",
   "observabilityTab",
@@ -230,7 +221,7 @@ const workspaceTabs = [
   elements.get("observabilityTab"),
 ];
 
-const operateSubviewNames = ["overview", "timeline", "thread", "artifacts"];
+const operateSubviewNames = ["overview", "thread", "timeline"];
 const operateSubviewTabs = operateSubviewNames.map((name, index) => {
   const element = createElement(`operateSubview-${name}`, "button");
   element.dataset.operateView = name;
@@ -239,7 +230,7 @@ const operateSubviewTabs = operateSubviewNames.map((name, index) => {
   return element;
 });
 
-const buildSubviewNames = ["workTypes", "onboarding", "connectors", "playbooks", "secrets"];
+const buildSubviewNames = ["workTypes", "connectors", "publish"];
 const buildSubviewTabs = buildSubviewNames.map((name, index) => {
   const element = createElement(`buildSubview-${name}`, "button");
   element.dataset.buildView = name;
@@ -310,14 +301,14 @@ assert(secondWorkType, "Expected a second work type card");
 secondWorkType.click();
 assert(elements.get("workTypeFocus").innerHTML.includes("Story Delivery"), "Selecting a work type should update focus");
 
-buildSubviewTabs[2].click();
+buildSubviewTabs[1].click();
 assert(elements.get("buildConnectorsPanel").hidden === false, "Connector subview should open");
 assert(elements.get("adminConnectorCatalog").children.length >= 1, "Connector catalog should render");
 assert(elements.get("runtimeModeSelector").children.length >= 1, "Runtime modes should render");
 
 elements.get("operateShortcut").click();
 assert(elements.get("operatePanel").hidden === false, "Operate panel should reopen");
-operateSubviewTabs[2].click();
+operateSubviewTabs[1].click();
 assert(elements.get("operateThreadPanel").hidden === false, "Thread subview should open");
 
 elements.get("attachContextButton").click();
@@ -330,6 +321,10 @@ assert(elements.get("messageStream").children.length >= previousMessages, "Threa
 elements.get("connectSourceAdapterButton").click();
 assert(elements.get("buildPanel").hidden === false, "Connector onboarding CTA should route to Build");
 assert(elements.get("buildConnectorsPanel").hidden === false, "Connector onboarding CTA should open connector subview");
+
+buildSubviewTabs[2].click();
+assert(elements.get("buildPublishPanel").hidden === false, "Publish subview should open");
+assert(elements.get("onboardingList").children.length >= 1, "Publish flow should render onboarding steps");
 
 elements.get("observabilityShortcut").click();
 assert(elements.get("observabilityPanel").hidden === false, "Observability panel should open");

@@ -41,10 +41,6 @@ const insightGrid = document.getElementById("insightGrid");
 const timelineList = document.getElementById("timelineList");
 const runDecisionTrace = document.getElementById("runDecisionTrace");
 const messageStream = document.getElementById("messageStream");
-const runOutputList = document.getElementById("runOutputList");
-const runApprovalList = document.getElementById("runApprovalList");
-const runConnectorBindings = document.getElementById("runConnectorBindings");
-const runArtifactList = document.getElementById("runArtifactList");
 
 const workTypeRegistry = document.getElementById("workTypeRegistry");
 const workTypeFocus = document.getElementById("workTypeFocus");
@@ -67,8 +63,6 @@ const playbookRegistry = document.getElementById("playbookRegistry");
 const routingMatrixList = document.getElementById("routingMatrix");
 const workflowBindingsList = document.getElementById("workflowBindings");
 const chainGraphList = document.getElementById("chainGraph");
-const secretCatalog = document.getElementById("secretCatalog");
-const configSourceMatrix = document.getElementById("configSourceMatrix");
 
 const runBoard = document.getElementById("runBoard");
 const decisionTraceList = document.getElementById("decisionTrace");
@@ -115,15 +109,12 @@ const operateSubPanels = {
   overview: document.getElementById("operateOverviewPanel"),
   timeline: document.getElementById("operateTimelinePanel"),
   thread: document.getElementById("operateThreadPanel"),
-  artifacts: document.getElementById("operateArtifactsPanel"),
 };
 
 const buildSubPanels = {
   workTypes: document.getElementById("buildWorkTypesPanel"),
-  onboarding: document.getElementById("buildOnboardingPanel"),
   connectors: document.getElementById("buildConnectorsPanel"),
-  playbooks: document.getElementById("buildPlaybooksPanel"),
-  secrets: document.getElementById("buildSecretsPanel"),
+  publish: document.getElementById("buildPublishPanel"),
 };
 
 let activeRunId = liveRuns[0]?.id || "";
@@ -383,7 +374,7 @@ function renderHeader() {
 
   if (activeWorkspaceView === "observability") {
     workspaceKicker.textContent = "Control plane health";
-    chatTitle.textContent = "Observability";
+    chatTitle.textContent = "Health";
     chatMeta.innerHTML = "<span>Runs, routing, and failure hotspots across environments</span>";
     return;
   }
@@ -503,6 +494,7 @@ function renderOperateOverview() {
     `Trigger: ${run?.trigger || "n/a"}`,
     `Connectors: ${formatList(run?.connectors || [])}`,
     `Outputs: ${formatList(run?.outputs || [])}`,
+    `Approval: ${run?.approval || "n/a"}`,
     `Summary: ${run?.summary || "n/a"}`,
   ].forEach((text) => {
     const item = document.createElement("div");
@@ -588,63 +580,6 @@ function renderOperateThread() {
       <div class="message-body">${message.body}</div>
     `;
     messageStream.appendChild(article);
-  });
-}
-
-function renderOperateArtifacts() {
-  const run = activeRun();
-
-  runOutputList.innerHTML = "";
-  (run?.outputs || []).forEach((output) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `<div class="playbook-detail">${output}</div>`;
-    runOutputList.appendChild(row);
-  });
-  if (!runOutputList.children.length) {
-    runOutputList.innerHTML = '<div class="history-empty">No outputs recorded.</div>';
-  }
-
-  runApprovalList.innerHTML = "";
-  [
-    { label: "Approval posture", value: run?.approval || "n/a" },
-    { label: "Risk", value: run?.risk || "n/a" },
-    { label: "Next gate", value: run?.next || "n/a" },
-  ].forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
-    runApprovalList.appendChild(row);
-  });
-
-  runConnectorBindings.innerHTML = "";
-  connectors.filter((connector) => (run?.connectors || []).includes(connector.id)).forEach((connector) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${connector.name}</div>
-          <div class="playbook-meta">${connector.mode}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
-      </div>
-      <div class="playbook-detail">${connector.detail}</div>
-    `;
-    runConnectorBindings.appendChild(row);
-  });
-
-  runArtifactList.innerHTML = "";
-  [
-    `Run id: ${run?.id || "n/a"}`,
-    `Trigger: ${run?.trigger || "n/a"}`,
-    `Duration: ${run?.duration || "n/a"}`,
-    `Source: ${run?.source || "n/a"}`,
-  ].forEach((text) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `<div class="playbook-detail">${text}</div>`;
-    runArtifactList.appendChild(row);
   });
 }
 
@@ -785,7 +720,10 @@ function renderOnboarding() {
   });
 
   configSourceList.innerHTML = "";
-  configSources.forEach((source) => {
+  [...configSources, ...secretBindings.map((binding) => ({
+    label: binding.label,
+    detail: binding.detail,
+  }))].forEach((source) => {
     const row = document.createElement("div");
     row.className = "binding-row";
     row.innerHTML = `
@@ -802,6 +740,7 @@ function renderOnboarding() {
     { label: "Schema mapped", value: "Required" },
     { label: "Writeback reviewed", value: workType?.approvalPosture || "Required" },
     { label: "Publish state", value: workType?.publishState || "Draft" },
+    { label: "Secrets ready", value: "Repo, runner, or runtime-injected" },
   ].forEach((entry) => {
     const row = document.createElement("div");
     row.className = "policy-row";
@@ -1080,38 +1019,6 @@ function renderBuildConnectors() {
   renderAdminSpec();
 }
 
-function renderPlaybooks() {
-  playbookRegistry.innerHTML = "";
-  visiblePlaybooks().forEach((playbook) => {
-    const card = document.createElement("div");
-    card.className = "playbook-row";
-    card.innerHTML = `
-      <div class="playbook-title-row">
-        <div>
-          <div class="playbook-name">${playbook.name}</div>
-          <div class="playbook-meta">${playbook.workload} • ${playbook.owner}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(playbook.status)}">${playbook.status}</span>
-      </div>
-      <div class="playbook-chip-row">
-        <span class="focus-chip">${playbook.outputs}</span>
-        <span class="focus-chip">${playbook.stages.length} stages</span>
-        <span class="focus-chip">${playbook.chains.length} downstream</span>
-      </div>
-      <div class="playbook-detail">${playbook.triggers.join(" • ")}</div>
-      <div class="focus-list">
-        <div class="focus-list-item">Stages: ${playbook.stages.join(" -> ")}</div>
-        <div class="focus-list-item">Gates: ${playbook.gates.join(" • ")}</div>
-      </div>
-    `;
-    playbookRegistry.appendChild(card);
-  });
-
-  if (!playbookRegistry.children.length) {
-    playbookRegistry.innerHTML = '<div class="history-empty">No playbooks match the current search.</div>';
-  }
-}
-
 function renderRoutingMatrix() {
   routingMatrixList.innerHTML = "";
   visibleRoutes().forEach((route) => {
@@ -1174,33 +1081,6 @@ function renderChainGraph() {
       `;
       chainGraphList.appendChild(row);
     });
-}
-
-function renderSecrets() {
-  secretCatalog.innerHTML = "";
-  secretBindings.forEach((binding) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "secret-row";
-    wrapper.innerHTML = `
-      <div class="policy-row">
-        <span>${binding.label}</span>
-        <span class="policy-value">${binding.value}</span>
-      </div>
-      <div class="policy-subtext">${binding.detail}</div>
-    `;
-    secretCatalog.appendChild(wrapper);
-  });
-
-  configSourceMatrix.innerHTML = "";
-  configSources.forEach((source) => {
-    const row = document.createElement("div");
-    row.className = "binding-row";
-    row.innerHTML = `
-      <div class="playbook-name">${source.label}</div>
-      <div class="playbook-detail">${source.detail}</div>
-    `;
-    configSourceMatrix.appendChild(row);
-  });
 }
 
 function renderRunsBoard() {
@@ -1570,15 +1450,12 @@ function renderAll() {
   renderOperateOverview();
   renderOperateTimeline();
   renderOperateThread();
-  renderOperateArtifacts();
   renderWorkTypes();
   renderOnboarding();
   renderBuildConnectors();
-  renderPlaybooks();
   renderRoutingMatrix();
   renderWorkflowBindings();
   renderChainGraph();
-  renderSecrets();
   renderRunsBoard();
   renderDecisionTraceBoard();
   renderFailureHeatmap();

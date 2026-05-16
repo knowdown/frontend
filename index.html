@@ -26,7 +26,7 @@
         <div class="brand-title">Knockdown</div>
         <div class="brand-subtitle">Work Delivery Control Plane</div>
       </div>
-      <span class="status-pill">Runs + Build + Observability</span>
+      <span class="status-pill">Runs + Build + Health</span>
     </div>
 
     <div class="topbar-center">
@@ -39,9 +39,9 @@
     </div>
 
     <div class="topbar-right">
-      <button class="ghost-button" id="operateShortcut">Operate</button>
+      <button class="ghost-button" id="operateShortcut">Runs</button>
       <button class="ghost-button" id="buildShortcut">Build</button>
-      <button class="ghost-button" id="observabilityShortcut">Observability</button>
+      <button class="ghost-button" id="observabilityShortcut">Health</button>
       <button class="accent-button" id="launchRunButton">Launch Run</button>
       <button class="mobile-toggle mobile-toggle-right" id="connectorToggle" aria-label="Toggle inspector">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -96,9 +96,9 @@
       </section>
 
       <section class="workspace-switcher">
-        <button class="workspace-tab active" id="operateTab" data-view="operate" type="button">Operate</button>
+        <button class="workspace-tab active" id="operateTab" data-view="operate" type="button">Runs</button>
         <button class="workspace-tab" id="buildTab" data-view="build" type="button">Build</button>
-        <button class="workspace-tab" id="observabilityTab" data-view="observability" type="button">Observability</button>
+        <button class="workspace-tab" id="observabilityTab" data-view="observability" type="button">Health</button>
       </section>
 
       <section class="workspace-panel" id="operatePanel">
@@ -128,10 +128,9 @@
         </section>
 
         <section class="subview-switcher">
-          <button class="subview-tab active" data-operate-view="overview" type="button">Overview</button>
-          <button class="subview-tab" data-operate-view="timeline" type="button">Timeline</button>
+          <button class="subview-tab active" data-operate-view="overview" type="button">Summary</button>
           <button class="subview-tab" data-operate-view="thread" type="button">Thread</button>
-          <button class="subview-tab" data-operate-view="artifacts" type="button">Artifacts</button>
+          <button class="subview-tab" data-operate-view="timeline" type="button">Timeline</button>
         </section>
 
         <section class="subview-panel" id="operateOverviewPanel">
@@ -215,58 +214,13 @@
           </section>
         </section>
 
-        <section class="subview-panel" id="operateArtifactsPanel" hidden>
-          <div class="control-grid">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Outputs</div>
-                  <h2 class="card-title">Run outputs</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="runOutputList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Approvals</div>
-                  <h2 class="card-title">Guardrails and gates</h2>
-                </div>
-              </div>
-              <div class="policy-list" id="runApprovalList"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Connectors used</div>
-                  <h2 class="card-title">Execution surface</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="runConnectorBindings"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Trigger</div>
-                  <h2 class="card-title">Activation context</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="runArtifactList"></div>
-            </section>
-          </div>
-        </section>
       </section>
 
       <section class="workspace-panel" id="buildPanel" hidden>
         <section class="subview-switcher">
           <button class="subview-tab active" data-build-view="workTypes" type="button">Work Types</button>
-          <button class="subview-tab" data-build-view="onboarding" type="button">Onboarding</button>
           <button class="subview-tab" data-build-view="connectors" type="button">Connectors</button>
-          <button class="subview-tab" data-build-view="playbooks" type="button">Playbooks</button>
-          <button class="subview-tab" data-build-view="secrets" type="button">Secrets</button>
+          <button class="subview-tab" data-build-view="publish" type="button">Publish</button>
         </section>
 
         <section class="subview-panel" id="buildWorkTypesPanel">
@@ -313,13 +267,13 @@
           </div>
         </section>
 
-        <section class="subview-panel" id="buildOnboardingPanel" hidden>
+        <section class="subview-panel" id="buildPublishPanel" hidden>
           <div class="control-grid">
             <section class="workflow-card admin-span-2">
               <div class="card-top">
                 <div>
-                  <div class="card-kicker">Guided onboarding</div>
-                  <h2 class="card-title">From source connection to publish</h2>
+                  <div class="card-kicker">Guided publish flow</div>
+                  <h2 class="card-title">From source connection to production</h2>
                 </div>
               </div>
               <div class="binding-list" id="onboardingList"></div>
@@ -475,29 +429,6 @@
           </div>
         </section>
 
-        <section class="subview-panel" id="buildSecretsPanel" hidden>
-          <div class="control-grid">
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Secret inventory</div>
-                  <h2 class="card-title">Runtime and repo scopes</h2>
-                </div>
-              </div>
-              <div class="policy-list" id="secretCatalog"></div>
-            </section>
-
-            <section class="workflow-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-kicker">Provenance model</div>
-                  <h2 class="card-title">How values resolve</h2>
-                </div>
-              </div>
-              <div class="binding-list" id="configSourceMatrix"></div>
-            </section>
-          </div>
-        </section>
       </section>
 
       <section class="workspace-panel" id="observabilityPanel" hidden>
@@ -506,7 +437,7 @@
             <div class="card-top">
               <div>
                 <div class="card-kicker">Live runs</div>
-                <h2 class="card-title">Execution board</h2>
+                <h2 class="card-title">Health board</h2>
               </div>
             </div>
             <div class="run-board" id="runBoard"></div>
