@@ -3,7 +3,11 @@
 set -euo pipefail
 
 repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
-export GH_TOKEN="${PAGES_ADMIN_TOKEN:-${GITHUB_TOKEN:-}}"
+if [ -n "${PAGES_ADMIN_TOKEN:-}" ]; then
+  export GH_TOKEN="${PAGES_ADMIN_TOKEN}"
+elif [ -n "${GITHUB_TOKEN:-}" ]; then
+  export GH_TOKEN="${GITHUB_TOKEN}"
+fi
 
 api_headers=(
   -H "Accept: application/vnd.github+json"
