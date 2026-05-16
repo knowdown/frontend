@@ -1,5 +1,11 @@
 const consoleData = window.KNOCKDOWN_CONSOLE_DATA || {};
 
+const queueHealth = consoleData.queueHealth || [];
+const templates = consoleData.templates || [];
+const workTypes = consoleData.workTypes || [];
+const onboardingWorkflow = consoleData.onboardingWorkflow || [];
+const configSources = consoleData.configSources || [];
+const profiles = consoleData.profiles || [];
 const chats = consoleData.chats || [];
 const connectors = consoleData.connectors || [];
 const adminConsole = consoleData.adminConsole || {};
@@ -7,9 +13,7 @@ const adminConnectorProfiles = adminConsole.connectorProfiles || [];
 const adminSections = adminConsole.sections || [];
 const providers = consoleData.providers || [];
 const policies = consoleData.policies || [];
-const queueHealth = consoleData.queueHealth || [];
-const templates = consoleData.templates || [];
-const profiles = consoleData.profiles || [];
+const secretBindings = consoleData.secretBindings || [];
 const playbooks = consoleData.playbooks || [];
 const routingMatrix = consoleData.routingMatrix || [];
 const workflowBindings = consoleData.workflowBindings || [];
@@ -17,59 +21,39 @@ const chainGraph = consoleData.chainGraph || [];
 const liveRuns = consoleData.liveRuns || [];
 const decisionTrace = consoleData.decisionTrace || [];
 const failureHeatmap = consoleData.failureHeatmap || [];
-const secretBindings = consoleData.secretBindings || [];
 
 const globalSearchInput = document.querySelector(".global-search input");
 const historyList = document.getElementById("historyList");
 const templateList = document.getElementById("templateList");
-const messageStream = document.getElementById("messageStream");
-const connectorList = document.getElementById("connectorList");
-const connectorFocus = document.getElementById("connectorFocus");
-const providerGrid = document.getElementById("providerGrid");
-const policyList = document.getElementById("policyList");
 const overviewStrip = document.getElementById("overviewStrip");
-const insightGrid = document.getElementById("insightGrid");
-const timelineList = document.getElementById("timelineList");
+const workspaceKicker = document.getElementById("workspaceKicker");
 const chatTitle = document.getElementById("chatTitle");
 const chatMeta = document.getElementById("chatMeta");
+
 const profileValue = document.getElementById("profileValue");
 const sourceValue = document.getElementById("sourceValue");
 const stageValue = document.getElementById("stageValue");
 const nextActionValue = document.getElementById("nextActionValue");
-const composerInput = document.getElementById("composerInput");
-const newChatButton = document.getElementById("newChatButton");
-const sendButton = document.getElementById("sendButton");
-const attachContextButton = document.getElementById("attachContextButton");
-const historyToggle = document.getElementById("historyToggle");
-const connectorToggle = document.getElementById("connectorToggle");
-const historyPanel = document.getElementById("historyPanel");
-const connectorPanel = document.getElementById("connectorPanel");
-const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
-const secretBindingsList = document.getElementById("secretBindings");
-const playbookRegistry = document.getElementById("playbookRegistry");
-const routingMatrixList = document.getElementById("routingMatrix");
-const workflowBindingsList = document.getElementById("workflowBindings");
-const chainGraphList = document.getElementById("chainGraph");
-const runBoard = document.getElementById("runBoard");
-const decisionTraceList = document.getElementById("decisionTrace");
-const failureHeatmapList = document.getElementById("failureHeatmap");
-const workspaceTabs = Array.from(document.querySelectorAll(".workspace-tab"));
-const threadsPanel = document.getElementById("threadsPanel");
-const profilesPanel = document.getElementById("profilesPanel");
-const adminPanel = document.getElementById("adminPanel");
-const playbooksPanel = document.getElementById("playbooksPanel");
-const observabilityPanel = document.getElementById("observabilityPanel");
-const playbooksShortcut = document.getElementById("playbooksShortcut");
-const observabilityShortcut = document.getElementById("observabilityShortcut");
-const profilesShortcut = document.getElementById("profilesShortcut");
-const adminShortcut = document.getElementById("adminShortcut");
-const launchRunButton = document.getElementById("launchRunButton");
-const exportBriefButton = document.getElementById("exportBriefButton");
-const pauseRunButton = document.getElementById("pauseRunButton");
-const profileRegistry = document.getElementById("profileRegistry");
-const profileFocus = document.getElementById("profileFocus");
-const profileValidationGrid = document.getElementById("profileValidationGrid");
-const profileOutputList = document.getElementById("profileOutputList");
+
+const runSummaryList = document.getElementById("runSummaryList");
+const runDependencyList = document.getElementById("runDependencyList");
+const insightGrid = document.getElementById("insightGrid");
+const timelineList = document.getElementById("timelineList");
+const runDecisionTrace = document.getElementById("runDecisionTrace");
+const messageStream = document.getElementById("messageStream");
+const runOutputList = document.getElementById("runOutputList");
+const runApprovalList = document.getElementById("runApprovalList");
+const runConnectorBindings = document.getElementById("runConnectorBindings");
+const runArtifactList = document.getElementById("runArtifactList");
+
+const workTypeRegistry = document.getElementById("workTypeRegistry");
+const workTypeFocus = document.getElementById("workTypeFocus");
+const workTypeRouting = document.getElementById("workTypeRouting");
+const workTypePlaybooks = document.getElementById("workTypePlaybooks");
+const onboardingList = document.getElementById("onboardingList");
+const configSourceList = document.getElementById("configSourceList");
+const publishChecklist = document.getElementById("publishChecklist");
+
 const adminConnectorCatalog = document.getElementById("adminConnectorCatalog");
 const adminConnectorSummary = document.getElementById("adminConnectorSummary");
 const runtimeModeSelector = document.getElementById("runtimeModeSelector");
@@ -78,24 +62,79 @@ const toolMappingList = document.getElementById("toolMappingList");
 const adminEnvBindings = document.getElementById("adminEnvBindings");
 const writebackPolicyList = document.getElementById("writebackPolicyList");
 const adminSpecList = document.getElementById("adminSpecList");
+
+const playbookRegistry = document.getElementById("playbookRegistry");
+const routingMatrixList = document.getElementById("routingMatrix");
+const workflowBindingsList = document.getElementById("workflowBindings");
+const chainGraphList = document.getElementById("chainGraph");
+const secretCatalog = document.getElementById("secretCatalog");
+const configSourceMatrix = document.getElementById("configSourceMatrix");
+
+const runBoard = document.getElementById("runBoard");
+const decisionTraceList = document.getElementById("decisionTrace");
+const failureHeatmapList = document.getElementById("failureHeatmap");
+
+const connectorList = document.getElementById("connectorList");
+const connectorFocus = document.getElementById("connectorFocus");
+const providerGrid = document.getElementById("providerGrid");
+const policyList = document.getElementById("policyList");
+const secretBindingsList = document.getElementById("secretBindings");
+
+const composerInput = document.getElementById("composerInput");
+const attachContextButton = document.getElementById("attachContextButton");
+const sendButton = document.getElementById("sendButton");
+const exportBriefButton = document.getElementById("exportBriefButton");
+const pauseRunButton = document.getElementById("pauseRunButton");
+const launchRunButton = document.getElementById("launchRunButton");
+const newRunButton = document.getElementById("newRunButton");
 const connectSourceAdapterButton = document.getElementById("connectSourceAdapterButton");
-const switchProfileButton = document.getElementById("switchProfileButton");
+const switchWorkTypeButton = document.getElementById("switchWorkTypeButton");
 const contextDiagnosticsButton = document.getElementById("contextDiagnosticsButton");
+const openBuildConnectorsButton = document.getElementById("openBuildConnectorsButton");
+
+const operateShortcut = document.getElementById("operateShortcut");
+const buildShortcut = document.getElementById("buildShortcut");
+const observabilityShortcut = document.getElementById("observabilityShortcut");
+const workspaceTabs = Array.from(document.querySelectorAll(".workspace-tab"));
+const operateSubviewTabs = Array.from(document.querySelectorAll(".subview-tab[data-operate-view]"));
+const buildSubviewTabs = Array.from(document.querySelectorAll(".subview-tab[data-build-view]"));
+const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
+
+const historyToggle = document.getElementById("historyToggle");
+const connectorToggle = document.getElementById("connectorToggle");
+const historyPanel = document.getElementById("historyPanel");
+const connectorPanel = document.getElementById("connectorPanel");
 
 const workspacePanels = {
-  threads: threadsPanel,
-  profiles: profilesPanel,
-  admin: adminPanel,
-  playbooks: playbooksPanel,
-  observability: observabilityPanel,
+  operate: document.getElementById("operatePanel"),
+  build: document.getElementById("buildPanel"),
+  observability: document.getElementById("observabilityPanel"),
 };
 
-let activeChatId = chats[0]?.id || "";
+const operateSubPanels = {
+  overview: document.getElementById("operateOverviewPanel"),
+  timeline: document.getElementById("operateTimelinePanel"),
+  thread: document.getElementById("operateThreadPanel"),
+  artifacts: document.getElementById("operateArtifactsPanel"),
+};
+
+const buildSubPanels = {
+  workTypes: document.getElementById("buildWorkTypesPanel"),
+  onboarding: document.getElementById("buildOnboardingPanel"),
+  connectors: document.getElementById("buildConnectorsPanel"),
+  playbooks: document.getElementById("buildPlaybooksPanel"),
+  secrets: document.getElementById("buildSecretsPanel"),
+};
+
+let activeRunId = liveRuns[0]?.id || "";
+let activeWorkTypeId = workTypes[0]?.id || "";
 let activeConnectorId = connectors[0]?.id || "";
 let activeFilter = "all";
-let activeWorkspaceView = "threads";
-let activeProfileId = profiles[0]?.id || "";
+let activeWorkspaceView = "operate";
+let activeOperateView = "overview";
+let activeBuildView = "workTypes";
 let searchTerm = "";
+
 const runtimeModeSelections = Object.fromEntries(
   adminConnectorProfiles.map((profile) => [
     profile.id,
@@ -103,8 +142,13 @@ const runtimeModeSelections = Object.fromEntries(
   ])
 );
 
-function normalizeProfileId(value) {
-  return String(value || "").trim().toLowerCase();
+function searchable(values) {
+  return values.filter(Boolean).join(" ").toLowerCase();
+}
+
+function matchesSearch(values) {
+  if (!searchTerm) return true;
+  return searchable(values).includes(searchTerm);
 }
 
 function connectorStatusClass(status) {
@@ -130,26 +174,40 @@ function timelineStateClass(state) {
   return "pending";
 }
 
-function searchable(values) {
-  return values.filter(Boolean).join(" ").toLowerCase();
+function formatList(value, separator = ", ") {
+  if (Array.isArray(value)) return value.join(separator);
+  return value || "None";
 }
 
-function matchesSearch(values) {
-  if (!searchTerm) return true;
-  return searchable(values).includes(searchTerm);
+function workTypeById(id) {
+  return workTypes.find((workType) => workType.id === id) || null;
 }
 
-function matchesActiveProfile(profileName) {
-  if (!activeProfileId) return true;
-  return normalizeProfileId(profileName) === activeProfileId;
+function profileForWorkType(workType) {
+  if (!workType) return null;
+  return profiles.find((profile) => profile.id === workType.profileId) || null;
 }
 
-function activeProfile() {
-  return profiles.find((profile) => profile.id === activeProfileId) || profiles[0] || null;
+function activeRun() {
+  return liveRuns.find((run) => run.id === activeRunId) || liveRuns[0] || null;
 }
 
-function activeChat() {
-  return chats.find((item) => item.id === activeChatId) || null;
+function activeThread() {
+  const run = activeRun();
+  if (!run) return null;
+  return chats.find((chat) => chat.id === run.threadId) || null;
+}
+
+function activeWorkType() {
+  return workTypeById(activeWorkTypeId) || workTypes[0] || null;
+}
+
+function playbooksForWorkType(workType) {
+  return playbooks.filter((playbook) => (workType?.playbooks || []).includes(playbook.id));
+}
+
+function connectorsForWorkType(workType) {
+  return connectors.filter((connector) => (workType?.connectorIds || []).includes(connector.id));
 }
 
 function activeConnectorProfile(visibleProfiles = adminConnectorProfiles) {
@@ -162,70 +220,75 @@ function currentRuntimeMode(profile) {
   return (profile.runtimeModes || []).find((mode) => mode.id === selectedId) || profile.runtimeModes?.[0] || null;
 }
 
-function formatList(value, separator = ", ") {
-  if (Array.isArray(value)) return value.join(separator);
-  return value || "None";
-}
+function visibleRuns() {
+  return liveRuns.filter((run) => {
+    const status = String(run.status || "").toLowerCase();
+    const filterMatch = (
+      activeFilter === "all" ||
+      (activeFilter === "running" && status === "running") ||
+      (activeFilter === "waiting" && (status === "waiting" || status === "chained"))
+    );
 
-function matchesChatFilter(chat) {
-  if (activeFilter === "assigned") {
-    return chat.meta.some((item) => item.toLowerCase().includes("owner:"));
-  }
-  if (activeFilter === "watching") {
-    return chat.meta.some((item) => item.toLowerCase().includes("human gate") || item.toLowerCase().includes("await"));
-  }
-  return true;
-}
+    const workType = workTypeById(run.workTypeId);
 
-function filteredChats() {
-  return chats.filter((chat) => (
-    matchesChatFilter(chat) &&
-    matchesActiveProfile(chat.profile) &&
-    matchesSearch([
-      chat.title,
-      chat.source,
-      chat.profile,
-      chat.workflowStage,
-      ...(chat.meta || []),
-      ...((chat.messages || []).map((message) => `${message.author} ${message.body}`))
-    ])
-  ));
+    return filterMatch && matchesSearch([
+      run.id,
+      run.status,
+      run.playbook,
+      run.stage,
+      run.source,
+      run.owner,
+      run.next,
+      workType?.name,
+    ]);
+  });
 }
 
 function visibleTemplates() {
-  return templates.filter((template) => (
-    matchesActiveProfile(template.profile) &&
-    matchesSearch([template.title, template.meta, template.profile, template.prompt, template.sourceGraph])
-  ));
+  return templates.filter((template) => matchesSearch([
+    template.title,
+    template.meta,
+    template.profile,
+    template.prompt,
+    template.sourceGraph,
+  ]));
+}
+
+function visibleWorkTypes() {
+  return workTypes.filter((workType) => matchesSearch([
+    workType.name,
+    workType.summary,
+    workType.defaultRunMode,
+    workType.approvalPosture,
+    ...(workType.routingSignals || []),
+    ...(workType.playbooks || []),
+  ]));
 }
 
 function visiblePlaybooks() {
-  return playbooks.filter((playbook) => (
-    (activeProfileId ? normalizeProfileId(playbook.workload) === activeProfileId || normalizeProfileId(playbook.workload) === "shared" : true) &&
-    matchesSearch([
+  const selectedWorkType = activeWorkType();
+  const allowedPlaybooks = new Set(selectedWorkType?.playbooks || []);
+
+  return playbooks.filter((playbook) => {
+    const workTypeMatch = activeBuildView !== "playbooks" || !selectedWorkType || allowedPlaybooks.size === 0 || allowedPlaybooks.has(playbook.id) || String(playbook.workload).toLowerCase() === "shared";
+    return workTypeMatch && matchesSearch([
       playbook.name,
       playbook.workload,
       playbook.status,
       playbook.owner,
       ...(playbook.stages || []),
       ...(playbook.gates || []),
-      ...(playbook.chains || [])
-    ])
-  ));
+      ...(playbook.chains || []),
+    ]);
+  });
 }
 
 function visibleRoutes() {
-  return routingMatrix.filter((route) => (
-    matchesActiveProfile(route.workload) &&
-    matchesSearch([route.workload, route.signals, route.playbook, route.fallback])
-  ));
-}
-
-function visibleRuns() {
-  return liveRuns.filter((run) => (
-    (!activeProfileId || searchable([run.playbook, run.source]).includes(activeProfileId)) &&
-    matchesSearch([run.id, run.status, run.playbook, run.stage, run.source, run.risk, run.next])
-  ));
+  const selectedProfile = profileForWorkType(activeWorkType());
+  return routingMatrix.filter((route) => {
+    const profileMatch = !selectedProfile || String(route.workload || "").toLowerCase() === String(selectedProfile.name || "").toLowerCase();
+    return profileMatch && matchesSearch([route.workload, route.signals, route.playbook, route.fallback]);
+  });
 }
 
 function visibleAdminConnectorProfiles() {
@@ -240,113 +303,57 @@ function visibleAdminConnectorProfiles() {
   ]));
 }
 
+function ensureActiveRunVisible() {
+  const runs = visibleRuns();
+  if (!runs.length) {
+    activeRunId = "";
+    return;
+  }
+
+  if (!runs.some((run) => run.id === activeRunId)) {
+    activeRunId = runs[0].id;
+  }
+}
+
+function ensureActiveWorkTypeVisible() {
+  const visible = visibleWorkTypes();
+  if (!visible.length) {
+    activeWorkTypeId = "";
+    return;
+  }
+
+  if (!visible.some((workType) => workType.id === activeWorkTypeId)) {
+    activeWorkTypeId = visible[0].id;
+  }
+}
+
 function setWorkspaceView(view) {
   activeWorkspaceView = view;
   Object.entries(workspacePanels).forEach(([key, panel]) => {
     if (panel) panel.hidden = key !== view;
   });
   workspaceTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+  renderHeader();
 }
 
-function setActiveProfile(profileId, options = {}) {
-  activeProfileId = profileId || profiles[0]?.id || "";
-  renderHistory();
-  renderTemplates();
-  renderChat();
-  renderPlaybooks();
-  renderRoutingMatrix();
-  renderRuns();
-  renderDecisionTrace();
-  renderFailureHeatmap();
-  renderProfiles();
-
-  if (options.view) {
-    setWorkspaceView(options.view);
-  }
-}
-
-function ensureActiveChatVisible(visibleChats) {
-  if (!visibleChats.length) {
-    activeChatId = "";
-    return;
-  }
-
-  if (!visibleChats.some((chat) => chat.id === activeChatId)) {
-    activeChatId = visibleChats[0].id;
-  }
-}
-
-function renderHistory() {
-  historyList.innerHTML = "";
-  const visibleChats = filteredChats();
-  ensureActiveChatVisible(visibleChats);
-
-  visibleChats.forEach((chat) => {
-    const button = document.createElement("button");
-    button.className = `history-item${chat.id === activeChatId ? " active" : ""}`;
-    button.type = "button";
-    button.innerHTML = `
-      <div class="history-item-header">
-        <div class="history-item-title">${chat.title}</div>
-        <div class="history-item-time">${chat.time}</div>
-      </div>
-      <div class="history-item-meta">
-        <span class="history-item-source">${chat.source}</span>
-        <span class="history-item-stage">${chat.stage}</span>
-      </div>
-    `;
-
-    button.addEventListener("click", () => {
-      activeChatId = chat.id;
-      setWorkspaceView("threads");
-      renderHistory();
-      renderChat();
-      closePanelsOnMobile();
-    });
-
-    historyList.appendChild(button);
+function setOperateView(view) {
+  activeOperateView = view;
+  Object.entries(operateSubPanels).forEach(([key, panel]) => {
+    if (panel) panel.hidden = key !== view;
   });
-
-  if (!visibleChats.length) {
-    const empty = document.createElement("div");
-    empty.className = "history-empty";
-    const profileName = activeProfile()?.name || "current";
-    empty.textContent = `No ${profileName.toLowerCase()} threads match the current search or filter.`;
-    historyList.appendChild(empty);
-  }
+  operateSubviewTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.operateView === view));
 }
 
-function renderTemplates() {
-  templateList.innerHTML = "";
-
-  visibleTemplates().forEach((template) => {
-    const button = document.createElement("button");
-    button.className = "template-card";
-    button.type = "button";
-    button.innerHTML = `
-      <span class="template-title">${template.title}</span>
-      <span class="template-meta">${template.meta}</span>
-    `;
-
-    button.addEventListener("click", () => {
-      createTemplateChat(template);
-      closePanelsOnMobile();
-    });
-
-    templateList.appendChild(button);
+function setBuildView(view) {
+  activeBuildView = view;
+  Object.entries(buildSubPanels).forEach(([key, panel]) => {
+    if (panel) panel.hidden = key !== view;
   });
-
-  if (!templateList.children.length) {
-    const empty = document.createElement("div");
-    empty.className = "history-empty";
-    empty.textContent = "No templates match the active profile or search.";
-    templateList.appendChild(empty);
-  }
+  buildSubviewTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.buildView === view));
 }
 
-function renderOverview() {
+function renderOverviewStrip() {
   overviewStrip.innerHTML = "";
-
   queueHealth.forEach((item) => {
     const card = document.createElement("div");
     card.className = "overview-card";
@@ -359,42 +366,114 @@ function renderOverview() {
   });
 }
 
-function renderEmptyThreadState() {
-  const profile = activeProfile();
-  chatTitle.textContent = profile ? `${profile.name} delivery view` : "No active thread";
-  chatMeta.innerHTML = "<span>No active thread selected</span>";
-  profileValue.textContent = profile?.name || "N/A";
-  sourceValue.textContent = "Awaiting source graph";
-  stageValue.textContent = "Idle";
-  nextActionValue.textContent = "Create or select a thread";
-  composerInput.value = profile
-    ? `Start a ${profile.name.toLowerCase()} workflow and route it through ${profile.defaultPlaybook}.`
-    : "Start a workflow.";
-  messageStream.innerHTML = '<div class="history-empty">No thread matches the current profile or search scope.</div>';
-  insightGrid.innerHTML = "";
-  timelineList.innerHTML = '<div class="history-empty">Timeline will appear once a thread is selected.</div>';
-}
-
-function renderChat() {
-  const chat = activeChat();
-  if (!chat) {
-    renderEmptyThreadState();
+function renderHeader() {
+  if (activeWorkspaceView === "build") {
+    const workType = activeWorkType();
+    const profile = profileForWorkType(workType);
+    workspaceKicker.textContent = "Selected work type";
+    chatTitle.textContent = workType?.name || "Build";
+    chatMeta.innerHTML = [
+      workType?.status,
+      profile?.name ? `Profile: ${profile.name}` : "",
+      workType?.publishState ? `Publish state: ${workType.publishState}` : "",
+      workType?.approvalPosture ? `Approval: ${workType.approvalPosture}` : "",
+    ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
     return;
   }
 
-  chatTitle.textContent = chat.title;
-  profileValue.textContent = chat.profile;
-  sourceValue.textContent = chat.sourceGraph;
-  stageValue.textContent = chat.workflowStage;
-  composerInput.value = `Continue the ${chat.profile.toLowerCase()} workflow for "${chat.title}" and keep source sync guarded until approval.`;
-  nextActionValue.textContent = chat.timeline?.find((item) => item.state === "active")?.summary || "Review active stage details";
+  if (activeWorkspaceView === "observability") {
+    workspaceKicker.textContent = "Control plane health";
+    chatTitle.textContent = "Observability";
+    chatMeta.innerHTML = "<span>Runs, routing, and failure hotspots across environments</span>";
+    return;
+  }
 
-  chatMeta.innerHTML = chat.meta.map((item) => `<span>${item}</span>`).join("");
-  messageStream.innerHTML = "";
+  const run = activeRun();
+  const workType = workTypeById(run?.workTypeId);
+  workspaceKicker.textContent = "Selected run";
+  chatTitle.textContent = run ? `${run.id} · ${run.source}` : "No run selected";
+  chatMeta.innerHTML = [
+    workType?.name,
+    run?.status ? `Status: ${run.status}` : "",
+    run?.owner ? `Owner: ${run.owner}` : "",
+    run?.approval ? run.approval : "",
+  ].filter(Boolean).map((item) => `<span>${item}</span>`).join("");
+}
+
+function renderRunRail() {
+  historyList.innerHTML = "";
+  ensureActiveRunVisible();
+  const runs = visibleRuns();
+
+  runs.forEach((run) => {
+    const button = document.createElement("button");
+    button.className = `history-item${run.id === activeRunId ? " active" : ""}`;
+    button.type = "button";
+    button.innerHTML = `
+      <div class="history-item-header">
+        <div class="history-item-title">${run.id}</div>
+        <div class="history-item-time">${run.duration}</div>
+      </div>
+      <div class="history-item-meta">
+        <span class="history-item-source">${run.source}</span>
+        <span class="history-item-stage">${run.stage}</span>
+      </div>
+    `;
+
+    button.addEventListener("click", () => {
+      activeRunId = run.id;
+      activeWorkTypeId = run.workTypeId || activeWorkTypeId;
+      setWorkspaceView("operate");
+      renderAll();
+      closePanelsOnMobile();
+    });
+
+    historyList.appendChild(button);
+  });
+
+  if (!runs.length) {
+    historyList.innerHTML = '<div class="history-empty">No runs match the current search or filter.</div>';
+  }
+}
+
+function renderTemplates() {
+  templateList.innerHTML = "";
+  visibleTemplates().forEach((template) => {
+    const button = document.createElement("button");
+    button.className = "template-card";
+    button.type = "button";
+    button.innerHTML = `
+      <span class="template-title">${template.title}</span>
+      <span class="template-meta">${template.meta}</span>
+    `;
+    button.addEventListener("click", () => {
+      createTemplateRun(template);
+      closePanelsOnMobile();
+    });
+    templateList.appendChild(button);
+  });
+
+  if (!templateList.children.length) {
+    templateList.innerHTML = '<div class="history-empty">No starter flows match the current search.</div>';
+  }
+}
+
+function renderRunBanner() {
+  const run = activeRun();
+  const workType = workTypeById(run?.workTypeId);
+  profileValue.textContent = workType?.name || "Unknown";
+  sourceValue.textContent = run?.source || "Awaiting source";
+  stageValue.textContent = run?.stage || "Idle";
+  nextActionValue.textContent = run?.next || "Select a run";
+}
+
+function renderOperateOverview() {
+  const run = activeRun();
+  const thread = activeThread();
+  const workType = workTypeById(run?.workTypeId);
+
   insightGrid.innerHTML = "";
-  timelineList.innerHTML = "";
-
-  (chat.insights || []).forEach((insight) => {
+  (thread?.insights || []).forEach((insight) => {
     const card = document.createElement("div");
     card.className = `insight-card ${insightToneClass(insight.tone)}`;
     card.innerHTML = `
@@ -404,7 +483,41 @@ function renderChat() {
     insightGrid.appendChild(card);
   });
 
-  (chat.timeline || []).forEach((entry) => {
+  runSummaryList.innerHTML = "";
+  [
+    ["Work type", workType?.name || "n/a"],
+    ["Current playbook", run?.playbook || "n/a"],
+    ["Stage", run?.stage || "n/a"],
+    ["Approval posture", run?.approval || "n/a"],
+    ["Risk", run?.risk || "n/a"],
+    ["Next action", run?.next || "n/a"],
+  ].forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "summary-row";
+    row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+    runSummaryList.appendChild(row);
+  });
+
+  runDependencyList.innerHTML = "";
+  [
+    `Trigger: ${run?.trigger || "n/a"}`,
+    `Connectors: ${formatList(run?.connectors || [])}`,
+    `Outputs: ${formatList(run?.outputs || [])}`,
+    `Summary: ${run?.summary || "n/a"}`,
+  ].forEach((text) => {
+    const item = document.createElement("div");
+    item.className = "focus-list-item";
+    item.textContent = text;
+    runDependencyList.appendChild(item);
+  });
+}
+
+function renderOperateTimeline() {
+  const thread = activeThread();
+  const run = activeRun();
+
+  timelineList.innerHTML = "";
+  (thread?.timeline || []).forEach((entry) => {
     const item = document.createElement("div");
     item.className = `timeline-item ${timelineStateClass(entry.state)}`;
     item.innerHTML = `
@@ -420,7 +533,46 @@ function renderChat() {
     timelineList.appendChild(item);
   });
 
-  chat.messages.forEach((message) => {
+  if (!timelineList.children.length) {
+    timelineList.innerHTML = '<div class="history-empty">No timeline available for this run.</div>';
+  }
+
+  runDecisionTrace.innerHTML = "";
+  const traceMatches = decisionTrace.filter((trace) => {
+    const runRef = run?.source?.split("/").pop()?.trim() || "";
+    return matchesSearch([trace.title, ...(trace.details || [])]) && (
+      trace.title.includes(runRef) ||
+      trace.title.includes(run?.playbook || "") ||
+      trace.title.toLowerCase().includes(String(workTypeById(run?.workTypeId)?.profileId || "").toLowerCase())
+    );
+  });
+
+  (traceMatches.length ? traceMatches : decisionTrace.slice(0, 1)).forEach((trace) => {
+    const block = document.createElement("div");
+    block.className = "route-row";
+    block.innerHTML = `
+      <div class="playbook-name">${trace.title}</div>
+      <div class="focus-list">
+        ${(trace.details || []).map((detail) => `<div class="focus-list-item">${detail}</div>`).join("")}
+      </div>
+    `;
+    runDecisionTrace.appendChild(block);
+  });
+}
+
+function renderOperateThread() {
+  const thread = activeThread();
+  const run = activeRun();
+
+  if (!thread) {
+    messageStream.innerHTML = '<div class="history-empty">No troubleshooting thread available for this run.</div>';
+    return;
+  }
+
+  composerInput.value = `Review ${run?.id || "this run"}, summarize the blocker, and recommend the safest next move before any mutation.`;
+  messageStream.innerHTML = "";
+
+  thread.messages.forEach((message) => {
     const article = document.createElement("article");
     article.className = `message ${message.role}`;
     article.innerHTML = `
@@ -430,7 +582,7 @@ function renderChat() {
           <div class="message-meta">${message.timestamp}</div>
         </div>
         <div class="message-chips">
-          ${message.chips.map((chip) => `<span class="message-chip">${chip}</span>`).join("")}
+          ${(message.chips || []).map((chip) => `<span class="message-chip">${chip}</span>`).join("")}
         </div>
       </div>
       <div class="message-body">${message.body}</div>
@@ -439,251 +591,227 @@ function renderChat() {
   });
 }
 
-function renderConnectors() {
-  connectorList.innerHTML = "";
+function renderOperateArtifacts() {
+  const run = activeRun();
 
-  const visibleConnectors = connectors.filter((connector) => matchesSearch([
-    connector.name,
-    connector.detail,
-    connector.meta,
-    ...(connector.capabilities || []),
-    ...(connector.operations || []),
-    ...(connector.env || [])
-  ]));
-
-  if (!visibleConnectors.some((connector) => connector.id === activeConnectorId) && visibleConnectors[0]) {
-    activeConnectorId = visibleConnectors[0].id;
+  runOutputList.innerHTML = "";
+  (run?.outputs || []).forEach((output) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `<div class="playbook-detail">${output}</div>`;
+    runOutputList.appendChild(row);
+  });
+  if (!runOutputList.children.length) {
+    runOutputList.innerHTML = '<div class="history-empty">No outputs recorded.</div>';
   }
 
-  visibleConnectors.forEach((connector) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `connector-card${connector.id === activeConnectorId ? " active" : ""}`;
-    card.innerHTML = `
-      <div class="connector-line">
-        <div class="connector-name">${connector.name}</div>
+  runApprovalList.innerHTML = "";
+  [
+    { label: "Approval posture", value: run?.approval || "n/a" },
+    { label: "Risk", value: run?.risk || "n/a" },
+    { label: "Next gate", value: run?.next || "n/a" },
+  ].forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "policy-row";
+    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
+    runApprovalList.appendChild(row);
+  });
+
+  runConnectorBindings.innerHTML = "";
+  connectors.filter((connector) => (run?.connectors || []).includes(connector.id)).forEach((connector) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${connector.name}</div>
+          <div class="playbook-meta">${connector.mode}</div>
+        </div>
         <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
       </div>
-      <div class="connector-detail">${connector.detail}</div>
-      <div class="connector-meta">
-        <div>${connector.mode}</div>
-        <div>${connector.meta}</div>
-      </div>
+      <div class="playbook-detail">${connector.detail}</div>
     `;
-
-    card.addEventListener("click", () => {
-      activeConnectorId = connector.id;
-      renderConnectors();
-      renderAdminConsole();
-    });
-
-    connectorList.appendChild(card);
+    runConnectorBindings.appendChild(row);
   });
 
-  if (!visibleConnectors.length) {
-    connectorFocus.innerHTML = `
-      <div class="focus-kicker">Selected connector</div>
-      <h3 class="focus-title">No connector match</h3>
-      <div class="focus-meta">Try a broader search to inspect connector configuration and capability details.</div>
-    `;
-    return;
-  }
-
-  const activeConnector = connectors.find((connector) => connector.id === activeConnectorId);
-  if (!activeConnector) return;
-
-  connectorFocus.innerHTML = `
-    <div class="focus-kicker">Selected connector</div>
-    <div class="focus-title-row">
-      <h3 class="focus-title">${activeConnector.name}</h3>
-      <span class="connector-status ${connectorStatusClass(activeConnector.status)}">${activeConnector.status}</span>
-    </div>
-    <div class="focus-meta">${activeConnector.mode}</div>
-    <div class="focus-stats">
-      <div class="focus-stat">
-        <span>Health</span>
-        <strong>${activeConnector.health}</strong>
-      </div>
-      <div class="focus-stat">
-        <span>Latency</span>
-        <strong>${activeConnector.latency}</strong>
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Capabilities</div>
-      <div class="focus-chip-row">
-        ${(activeConnector.capabilities || []).map((capability) => `<span class="focus-chip">${capability}</span>`).join("")}
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Operations</div>
-      <div class="focus-list">
-        ${(activeConnector.operations || []).map((operation) => `<div class="focus-list-item">${operation}</div>`).join("")}
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Environment keys</div>
-      <div class="focus-list env-list">
-        ${(activeConnector.env || []).map((envKey) => `<div class="focus-list-item">${envKey}</div>`).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderProviders() {
-  providerGrid.innerHTML = "";
-
-  providers.forEach((provider) => {
-    const card = document.createElement("div");
-    card.className = "provider-card";
-    card.innerHTML = `
-      <div class="provider-name">${provider.name}</div>
-      <div class="provider-source">${provider.source}</div>
-    `;
-    providerGrid.appendChild(card);
-  });
-}
-
-function renderPolicies() {
-  policyList.innerHTML = "";
-
-  policies.forEach((policy) => {
+  runArtifactList.innerHTML = "";
+  [
+    `Run id: ${run?.id || "n/a"}`,
+    `Trigger: ${run?.trigger || "n/a"}`,
+    `Duration: ${run?.duration || "n/a"}`,
+    `Source: ${run?.source || "n/a"}`,
+  ].forEach((text) => {
     const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `
-      <span>${policy.label}</span>
-      <span class="policy-value">${policy.value}</span>
-    `;
-    policyList.appendChild(row);
+    row.className = "binding-row";
+    row.innerHTML = `<div class="playbook-detail">${text}</div>`;
+    runArtifactList.appendChild(row);
   });
 }
 
-function renderSecretBindings() {
-  secretBindingsList.innerHTML = "";
+function renderWorkTypes() {
+  ensureActiveWorkTypeVisible();
+  const selectedWorkType = activeWorkType();
+  const selectedProfile = profileForWorkType(selectedWorkType);
 
-  secretBindings.forEach((binding) => {
-    const row = document.createElement("div");
-    row.className = "policy-row";
-    row.innerHTML = `
-      <span>${binding.label}</span>
-      <span class="policy-value">${binding.value}</span>
-    `;
-
-    const detail = document.createElement("div");
-    detail.className = "policy-subtext";
-    detail.textContent = binding.detail;
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "secret-row";
-    wrapper.appendChild(row);
-    wrapper.appendChild(detail);
-    secretBindingsList.appendChild(wrapper);
-  });
-}
-
-function renderProfiles() {
-  profileRegistry.innerHTML = "";
-  profileValidationGrid.innerHTML = "";
-  profileOutputList.innerHTML = "";
-
-  const selectedProfile = activeProfile();
-  const visibleProfiles = profiles.filter((profile) => matchesSearch([
-    profile.name,
-    profile.description,
-    profile.policySummary,
-    profile.defaultPlaybook,
-    ...(profile.stages || []),
-    ...(profile.validationModes || []),
-    ...(profile.outputs || [])
-  ]));
-
-  visibleProfiles.forEach((profile) => {
+  workTypeRegistry.innerHTML = "";
+  visibleWorkTypes().forEach((workType) => {
     const card = document.createElement("button");
     card.type = "button";
-    card.className = `playbook-row${profile.id === activeProfileId ? " active-card" : ""}`;
+    card.className = `playbook-row${workType.id === activeWorkTypeId ? " active-card" : ""}`;
     card.innerHTML = `
       <div class="playbook-title-row">
         <div>
-          <div class="playbook-name">${profile.name}</div>
-          <div class="playbook-meta">${profile.defaultPlaybook} • ${profile.stages.length} stages</div>
+          <div class="playbook-name">${workType.name}</div>
+          <div class="playbook-meta">${workType.defaultRunMode} • ${workType.publishState}</div>
         </div>
-        <span class="connector-status ${connectorStatusClass(profile.status)}">${profile.status}</span>
+        <span class="connector-status ${connectorStatusClass(workType.status)}">${workType.status}</span>
       </div>
-      <div class="playbook-detail">${profile.description}</div>
+      <div class="playbook-detail">${workType.summary}</div>
     `;
-    card.addEventListener("click", () => setActiveProfile(profile.id, { view: "profiles" }));
-    profileRegistry.appendChild(card);
+    card.addEventListener("click", () => {
+      activeWorkTypeId = workType.id;
+      activeConnectorId = workType.connectorIds?.[0] || activeConnectorId;
+      renderAll();
+    });
+    workTypeRegistry.appendChild(card);
   });
 
-  if (!visibleProfiles.length) {
-    profileRegistry.innerHTML = '<div class="history-empty">No profiles match the current search.</div>';
+  if (!workTypeRegistry.children.length) {
+    workTypeRegistry.innerHTML = '<div class="history-empty">No work types match the current search.</div>';
   }
 
-  if (!selectedProfile) {
-    profileFocus.innerHTML = '<div class="history-empty">No profile available.</div>';
+  if (!selectedWorkType) {
+    workTypeFocus.innerHTML = '<div class="history-empty">No work type selected.</div>';
+    workTypeRouting.innerHTML = '<div class="history-empty">No routing info available.</div>';
+    workTypePlaybooks.innerHTML = '<div class="history-empty">No playbooks available.</div>';
     return;
   }
 
-  profileFocus.innerHTML = `
-    <div class="focus-kicker">Profile focus</div>
+  workTypeFocus.innerHTML = `
+    <div class="focus-kicker">Selected work type</div>
     <div class="focus-title-row">
-      <h3 class="focus-title">${selectedProfile.name}</h3>
-      <span class="connector-status ${connectorStatusClass(selectedProfile.status)}">${selectedProfile.status}</span>
+      <h3 class="focus-title">${selectedWorkType.name}</h3>
+      <span class="connector-status ${connectorStatusClass(selectedWorkType.status)}">${selectedWorkType.status}</span>
     </div>
-    <div class="focus-meta">${selectedProfile.description}</div>
-    <div class="focus-section">
-      <div class="focus-section-title">Default playbook</div>
-      <div class="focus-list">
-        <div class="focus-list-item">${selectedProfile.defaultPlaybook}</div>
+    <div class="focus-meta">${selectedWorkType.summary}</div>
+    <div class="focus-stats">
+      <div class="focus-stat">
+        <span>Profile</span>
+        <strong>${selectedProfile?.name || "n/a"}</strong>
+      </div>
+      <div class="focus-stat">
+        <span>Publish state</span>
+        <strong>${selectedWorkType.publishState}</strong>
       </div>
     </div>
     <div class="focus-section">
-      <div class="focus-section-title">Gate posture</div>
+      <div class="focus-section-title">Connectors</div>
       <div class="focus-chip-row">
-        ${(selectedProfile.gates || []).map((gate) => `<span class="focus-chip">${gate}</span>`).join("")}
+        ${connectorsForWorkType(selectedWorkType).map((connector) => `<span class="focus-chip">${connector.name}</span>`).join("")}
       </div>
     </div>
     <div class="focus-section">
-      <div class="focus-section-title">Policy summary</div>
-      <div class="focus-meta">${selectedProfile.policySummary}</div>
+      <div class="focus-section-title">Outputs</div>
+      <div class="focus-list">
+        ${(selectedWorkType.outputs || []).map((output) => `<div class="focus-list-item">${output}</div>`).join("")}
+      </div>
+    </div>
+    <div class="focus-section">
+      <div class="focus-section-title">Approval posture</div>
+      <div class="focus-meta">${selectedWorkType.approvalPosture}</div>
     </div>
   `;
 
-  (selectedProfile.validationModes || []).forEach((mode) => {
-    const card = document.createElement("div");
-    card.className = "provider-card";
-    card.innerHTML = `
-      <div class="provider-name">${mode}</div>
-      <div class="provider-source">Validation strategy enabled for the ${selectedProfile.name.toLowerCase()} lifecycle.</div>
+  workTypeRouting.innerHTML = "";
+  [
+    ...visibleRoutes().map((route) => ({
+      title: route.workload,
+      meta: route.signals,
+      detail: `Default playbook: ${route.playbook} • Fallback: ${route.fallback} • Confidence: ${route.confidence}`,
+    })),
+    ...(visibleRoutes().length ? [] : [{
+      title: "Signals",
+      meta: formatList(selectedWorkType.routingSignals || []),
+      detail: "This work type uses explicit routing signals defined in the control plane.",
+    }]),
+  ].forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "route-row";
+    row.innerHTML = `
+      <div class="route-main">
+        <div class="playbook-name">${entry.title}</div>
+        <div class="route-meta">${entry.meta}</div>
+      </div>
+      <div class="playbook-detail">${entry.detail}</div>
     `;
-    profileValidationGrid.appendChild(card);
+    workTypeRouting.appendChild(row);
   });
 
-  (selectedProfile.outputs || []).forEach((output) => {
+  workTypePlaybooks.innerHTML = "";
+  (selectedWorkType.playbooks || []).forEach((playbookId) => {
+    const matchingPlaybook = playbooks.find((playbook) => playbook.id === playbookId);
     const row = document.createElement("div");
-    row.className = "policy-row";
+    row.className = "binding-row";
     row.innerHTML = `
-      <span>${output}</span>
-      <span class="policy-value">required</span>
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${matchingPlaybook?.name || playbookId}</div>
+          <div class="playbook-meta">${matchingPlaybook?.owner || "Configured chain node"}</div>
+        </div>
+        <span class="focus-chip">${matchingPlaybook?.status || "CHAIN"}</span>
+      </div>
+      <div class="playbook-detail">${matchingPlaybook ? matchingPlaybook.stages.join(" -> ") : "Defined in the selected work type chain."}</div>
     `;
-    profileOutputList.appendChild(row);
+    workTypePlaybooks.appendChild(row);
   });
 }
 
-function renderAdminConsole() {
-  renderAdminConnectorCatalog();
-  renderAdminConnectorSummary();
-  renderRuntimeModes();
-  renderMcpFabric();
-  renderToolMappings();
-  renderAdminBindings();
-  renderWritebackPolicy();
-  renderAdminSpec();
+function renderOnboarding() {
+  onboardingList.innerHTML = "";
+  onboardingWorkflow.forEach((step, index) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-title-row">
+        <div>
+          <div class="playbook-name">${index + 1}. ${step.step}</div>
+          <div class="playbook-meta">${step.owner}</div>
+        </div>
+        <span class="focus-chip">Required</span>
+      </div>
+      <div class="playbook-detail">${step.detail}</div>
+    `;
+    onboardingList.appendChild(row);
+  });
+
+  configSourceList.innerHTML = "";
+  configSources.forEach((source) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${source.label}</div>
+      <div class="playbook-detail">${source.detail}</div>
+    `;
+    configSourceList.appendChild(row);
+  });
+
+  const workType = activeWorkType();
+  publishChecklist.innerHTML = "";
+  [
+    { label: "Dry-run with sample item", value: "Required" },
+    { label: "Schema mapped", value: "Required" },
+    { label: "Writeback reviewed", value: workType?.approvalPosture || "Required" },
+    { label: "Publish state", value: workType?.publishState || "Draft" },
+  ].forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "policy-row";
+    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
+    publishChecklist.appendChild(row);
+  });
 }
 
 function renderAdminConnectorCatalog() {
   adminConnectorCatalog.innerHTML = "";
-
   const visibleProfiles = visibleAdminConnectorProfiles();
 
   if (!visibleProfiles.some((profile) => profile.id === activeConnectorId) && visibleProfiles[0]) {
@@ -710,8 +838,8 @@ function renderAdminConnectorCatalog() {
     `;
     card.addEventListener("click", () => {
       activeConnectorId = profile.id;
-      renderConnectors();
-      renderAdminConsole();
+      renderBuildConnectors();
+      renderInspector();
     });
     adminConnectorCatalog.appendChild(card);
   });
@@ -724,7 +852,7 @@ function renderAdminConnectorCatalog() {
 function renderAdminConnectorSummary() {
   const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
   if (!profile) {
-    adminConnectorSummary.innerHTML = '<div class="history-empty">No connector profile selected.</div>';
+    adminConnectorSummary.innerHTML = '<div class="history-empty">No connector selected.</div>';
     return;
   }
 
@@ -753,12 +881,6 @@ function renderAdminConnectorSummary() {
         <div class="focus-list-item">${profile.sourceConfig}</div>
         <div class="focus-list-item">${profile.contractFile}</div>
         <div class="focus-list-item">${profile.adminCatalogFile}</div>
-      </div>
-    </div>
-    <div class="focus-section">
-      <div class="focus-section-title">Tags</div>
-      <div class="focus-chip-row">
-        ${(profile.tags || []).map((tag) => `<span class="focus-chip">${tag}</span>`).join("")}
       </div>
     </div>
   `;
@@ -792,8 +914,7 @@ function renderRuntimeModes() {
     `;
     card.addEventListener("click", () => {
       runtimeModeSelections[profile.id] = mode.id;
-      renderConnectors();
-      renderAdminConsole();
+      renderBuildConnectors();
     });
     runtimeModeSelector.appendChild(card);
   });
@@ -802,26 +923,20 @@ function renderRuntimeModes() {
 function renderMcpFabric() {
   mcpFabricList.innerHTML = "";
   const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    mcpFabricList.innerHTML = '<div class="history-empty">No MCP fabric data available.</div>';
-    return;
-  }
-
   const mode = currentRuntimeMode(profile);
-  const fabric = profile.mcpFabric || {};
-  const rows = [
+  const fabric = profile?.mcpFabric || {};
+
+  [
     `Namespace: ${fabric.namespace || "n/a"}`,
     `Advertised server: ${fabric.serverName || "n/a"}`,
-    `Runtime mode env var: ${fabric.runtimeModeEnvVar || profile.runtimeModeEnvVar || "n/a"}`,
-    `Namespace env var: ${fabric.namespaceEnvVar || profile.namespaceEnvVar || "n/a"}`,
+    `Runtime mode env var: ${fabric.runtimeModeEnvVar || "n/a"}`,
+    `Namespace env var: ${fabric.namespaceEnvVar || "n/a"}`,
     `Source base URL env var: ${fabric.sourceBaseUrlEnvVar || "n/a"}`,
     `Proxy base URL env var: ${fabric.proxyBaseUrlEnvVar || "n/a"}`,
-    `Required server(s) for selected mode: ${formatList(mode?.requiredServerNames || [])}`,
+    `Required server(s): ${formatList(mode?.requiredServerNames || [])}`,
     `Read path: ${fabric.sourceReadPath || "n/a"}`,
     `Write path: ${fabric.sourceWritePath || "n/a"}`,
-  ];
-
-  rows.forEach((text) => {
+  ].forEach((text) => {
     const row = document.createElement("div");
     row.className = "focus-list-item";
     row.textContent = text;
@@ -832,13 +947,9 @@ function renderMcpFabric() {
 function renderToolMappings() {
   toolMappingList.innerHTML = "";
   const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    toolMappingList.innerHTML = '<div class="history-empty">No tool mappings available.</div>';
-    return;
-  }
-
   const mode = currentRuntimeMode(profile);
-  (profile.toolMappings || []).forEach((mapping) => {
+
+  (profile?.toolMappings || []).forEach((mapping) => {
     const row = document.createElement("div");
     row.className = "mapping-row";
     row.innerHTML = `
@@ -879,14 +990,9 @@ function renderToolMappings() {
 function renderAdminBindings() {
   adminEnvBindings.innerHTML = "";
   const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    adminEnvBindings.innerHTML = '<div class="history-empty">No env bindings available.</div>';
-    return;
-  }
-
   const selectedModeId = currentRuntimeMode(profile)?.id;
 
-  (profile.envBindings || [])
+  (profile?.envBindings || [])
     .filter((binding) => !binding.modes || binding.modes.includes(selectedModeId))
     .forEach((binding) => {
       const row = document.createElement("div");
@@ -904,7 +1010,7 @@ function renderAdminBindings() {
       adminEnvBindings.appendChild(row);
     });
 
-  (profile.secretBindings || []).forEach((binding) => {
+  (profile?.secretBindings || []).forEach((binding) => {
     const row = document.createElement("div");
     row.className = "binding-row";
     row.innerHTML = `
@@ -923,29 +1029,19 @@ function renderAdminBindings() {
 
 function renderWritebackPolicy() {
   writebackPolicyList.innerHTML = "";
-  const profile = activeConnectorProfile(visibleAdminConnectorProfiles());
-  if (!profile) {
-    writebackPolicyList.innerHTML = '<div class="history-empty">No writeback policy available.</div>';
-    return;
-  }
+  const policy = activeConnectorProfile(visibleAdminConnectorProfiles())?.writePolicy || {};
 
-  const policy = profile.writePolicy || {};
-  const rows = [
+  [
     { label: "Comments", value: policy.allowComments ? "allowed" : "blocked" },
     { label: "Labels", value: policy.allowLabels ? "allowed" : "blocked" },
     { label: "Attachments", value: policy.allowAttachments ? "allowed" : "blocked" },
     { label: "Allowed field updates", value: formatList(policy.allowFieldUpdates || []) },
     { label: "Denied field updates", value: formatList(policy.denyFieldUpdates || []) },
     { label: "Approval posture", value: policy.approvalPosture || "n/a" },
-  ];
-
-  rows.forEach((entry) => {
+  ].forEach((entry) => {
     const row = document.createElement("div");
     row.className = "policy-row";
-    row.innerHTML = `
-      <span>${entry.label}</span>
-      <span class="policy-value">${entry.value}</span>
-    `;
+    row.innerHTML = `<span>${entry.label}</span><span class="policy-value">${entry.value}</span>`;
     writebackPolicyList.appendChild(row);
   });
 }
@@ -958,16 +1054,14 @@ function renderAdminSpec() {
     return;
   }
 
-  const items = [
+  [
     `Admin sections: ${formatList(adminSections)}`,
     `Connector file: ${profile.connectorFile}`,
     `Source config: ${profile.sourceConfig}`,
     `Stable contract: ${profile.contractFile}`,
     `Admin catalog: ${profile.adminCatalogFile}`,
-    "Spec document: Knockdown/docs/admin-console-spec.md",
-  ];
-
-  items.forEach((item) => {
+    "Model: Work Type -> Run -> Thread",
+  ].forEach((item) => {
     const row = document.createElement("div");
     row.className = "binding-row";
     row.innerHTML = `<div class="playbook-detail">${item}</div>`;
@@ -975,11 +1069,20 @@ function renderAdminSpec() {
   });
 }
 
+function renderBuildConnectors() {
+  renderAdminConnectorCatalog();
+  renderAdminConnectorSummary();
+  renderRuntimeModes();
+  renderMcpFabric();
+  renderToolMappings();
+  renderAdminBindings();
+  renderWritebackPolicy();
+  renderAdminSpec();
+}
+
 function renderPlaybooks() {
   playbookRegistry.innerHTML = "";
-  const visible = visiblePlaybooks();
-
-  visible.forEach((playbook) => {
+  visiblePlaybooks().forEach((playbook) => {
     const card = document.createElement("div");
     card.className = "playbook-row";
     card.innerHTML = `
@@ -1004,14 +1107,13 @@ function renderPlaybooks() {
     playbookRegistry.appendChild(card);
   });
 
-  if (!visible.length) {
-    playbookRegistry.innerHTML = '<div class="history-empty">No playbooks match the current search or profile.</div>';
+  if (!playbookRegistry.children.length) {
+    playbookRegistry.innerHTML = '<div class="history-empty">No playbooks match the current search.</div>';
   }
 }
 
 function renderRoutingMatrix() {
   routingMatrixList.innerHTML = "";
-
   visibleRoutes().forEach((route) => {
     const row = document.createElement("div");
     row.className = "route-row";
@@ -1030,13 +1132,12 @@ function renderRoutingMatrix() {
   });
 
   if (!routingMatrixList.children.length) {
-    routingMatrixList.innerHTML = '<div class="history-empty">No routing entries match the active profile or search.</div>';
+    routingMatrixList.innerHTML = '<div class="history-empty">No routing entries match the selected work type.</div>';
   }
 }
 
 function renderWorkflowBindings() {
   workflowBindingsList.innerHTML = "";
-
   workflowBindings
     .filter((binding) => matchesSearch([binding.name, binding.target, binding.workflow, binding.mode, binding.environment]))
     .forEach((binding) => {
@@ -1054,15 +1155,10 @@ function renderWorkflowBindings() {
       `;
       workflowBindingsList.appendChild(row);
     });
-
-  if (!workflowBindingsList.children.length) {
-    workflowBindingsList.innerHTML = '<div class="history-empty">No workflow bindings match the current search.</div>';
-  }
 }
 
 function renderChainGraph() {
   chainGraphList.innerHTML = "";
-
   chainGraph
     .filter((chain) => matchesSearch([chain.name, ...(chain.nodes || [])]))
     .forEach((chain) => {
@@ -1078,46 +1174,68 @@ function renderChainGraph() {
       `;
       chainGraphList.appendChild(row);
     });
-
-  if (!chainGraphList.children.length) {
-    chainGraphList.innerHTML = '<div class="history-empty">No chain graph entries match the current search.</div>';
-  }
 }
 
-function renderRuns() {
-  runBoard.innerHTML = "";
-
-  visibleRuns().forEach((run) => {
-    const card = document.createElement("div");
-    card.className = "run-card";
-    card.innerHTML = `
-      <div class="run-top">
-        <div>
-          <div class="playbook-name">${run.id}</div>
-          <div class="playbook-meta">${run.playbook} • ${run.source}</div>
-        </div>
-        <span class="connector-status ${connectorStatusClass(run.status)}">${run.status}</span>
+function renderSecrets() {
+  secretCatalog.innerHTML = "";
+  secretBindings.forEach((binding) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "secret-row";
+    wrapper.innerHTML = `
+      <div class="policy-row">
+        <span>${binding.label}</span>
+        <span class="policy-value">${binding.value}</span>
       </div>
-      <div class="run-meta">Stage: ${run.stage} • Duration: ${run.duration} • Risk: ${run.risk}</div>
-      <div class="playbook-detail">${run.next}</div>
+      <div class="policy-subtext">${binding.detail}</div>
     `;
-    runBoard.appendChild(card);
+    secretCatalog.appendChild(wrapper);
   });
 
-  if (!runBoard.children.length) {
-    runBoard.innerHTML = '<div class="history-empty">No live runs match the active profile or search.</div>';
-  }
+  configSourceMatrix.innerHTML = "";
+  configSources.forEach((source) => {
+    const row = document.createElement("div");
+    row.className = "binding-row";
+    row.innerHTML = `
+      <div class="playbook-name">${source.label}</div>
+      <div class="playbook-detail">${source.detail}</div>
+    `;
+    configSourceMatrix.appendChild(row);
+  });
 }
 
-function renderDecisionTrace() {
-  decisionTraceList.innerHTML = "";
+function renderRunsBoard() {
+  runBoard.innerHTML = "";
+  liveRuns
+    .filter((run) => matchesSearch([run.id, run.status, run.playbook, run.stage, run.source, run.risk, run.next]))
+    .forEach((run) => {
+      const workType = workTypeById(run.workTypeId);
+      const card = document.createElement("div");
+      card.className = "run-card";
+      card.innerHTML = `
+        <div class="run-top">
+          <div>
+            <div class="playbook-name">${run.id}</div>
+            <div class="playbook-meta">${workType?.name || "Unknown work type"} • ${run.source}</div>
+          </div>
+          <span class="connector-status ${connectorStatusClass(run.status)}">${run.status}</span>
+        </div>
+        <div class="run-meta">Stage: ${run.stage} • Duration: ${run.duration} • Risk: ${run.risk}</div>
+        <div class="playbook-detail">${run.next}</div>
+      `;
+      card.addEventListener("click", () => {
+        activeRunId = run.id;
+        activeWorkTypeId = run.workTypeId || activeWorkTypeId;
+        setWorkspaceView("operate");
+        renderAll();
+      });
+      runBoard.appendChild(card);
+    });
+}
 
+function renderDecisionTraceBoard() {
+  decisionTraceList.innerHTML = "";
   decisionTrace
-    .filter((trace) => {
-      const profile = activeProfile();
-      const profileMatch = !profile || normalizeProfileId(trace.title).includes(profile.id);
-      return profileMatch && matchesSearch([trace.title, ...(trace.details || [])]);
-    })
+    .filter((trace) => matchesSearch([trace.title, ...(trace.details || [])]))
     .forEach((trace) => {
       const block = document.createElement("div");
       block.className = "route-row";
@@ -1129,15 +1247,10 @@ function renderDecisionTrace() {
       `;
       decisionTraceList.appendChild(block);
     });
-
-  if (!decisionTraceList.children.length) {
-    decisionTraceList.innerHTML = '<div class="history-empty">No decision trace entries match the active profile or search.</div>';
-  }
 }
 
 function renderFailureHeatmap() {
   failureHeatmapList.innerHTML = "";
-
   failureHeatmap
     .filter((item) => matchesSearch([item.area, item.value, item.note]))
     .forEach((item) => {
@@ -1154,200 +1267,322 @@ function renderFailureHeatmap() {
       `;
       failureHeatmapList.appendChild(row);
     });
+}
 
-  if (!failureHeatmapList.children.length) {
-    failureHeatmapList.innerHTML = '<div class="history-empty">No failure hotspots match the current search.</div>';
+function renderConnectors() {
+  connectorList.innerHTML = "";
+  const visibleConnectors = connectors.filter((connector) => matchesSearch([
+    connector.name,
+    connector.detail,
+    connector.meta,
+    ...(connector.capabilities || []),
+    ...(connector.operations || []),
+    ...(connector.env || []),
+  ]));
+
+  if (!visibleConnectors.some((connector) => connector.id === activeConnectorId) && visibleConnectors[0]) {
+    activeConnectorId = visibleConnectors[0].id;
   }
+
+  visibleConnectors.forEach((connector) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `connector-card${connector.id === activeConnectorId ? " active" : ""}`;
+    card.innerHTML = `
+      <div class="connector-line">
+        <div class="connector-name">${connector.name}</div>
+        <span class="connector-status ${connectorStatusClass(connector.status)}">${connector.status}</span>
+      </div>
+      <div class="connector-detail">${connector.detail}</div>
+      <div class="connector-meta">
+        <div>${connector.mode}</div>
+        <div>${connector.meta}</div>
+      </div>
+    `;
+    card.addEventListener("click", () => {
+      activeConnectorId = connector.id;
+      renderInspector();
+      renderBuildConnectors();
+    });
+    connectorList.appendChild(card);
+  });
 }
 
-function createNewChat() {
-  const profile = activeProfile();
-  const threadNumber = chats.length + 1;
-  const profileName = profile?.name || "Task";
-  const stageName = profileName === "Case" ? "Diagnosis" : "Intake";
-  const draft = {
-    id: `draft-${threadNumber}`,
-    title: `New ${profileName.toLowerCase()} delivery thread ${threadNumber}`,
-    source: "Direct input / Unclassified",
-    time: "just now",
-    stage: stageName,
-    profile: profileName,
-    sourceGraph: "Awaiting adapter selection",
-    workflowStage: stageName,
-    meta: ["No source adapter selected", "Awaiting normalization", `Default playbook: ${profile?.defaultPlaybook || "task-intake"}`],
-    insights: [],
-    timeline: [
-      { stage: "Intake", state: "active", summary: "Thread created and waiting for source normalization." },
-      { stage: "Routing", state: "pending", summary: "Knockdown will select the initial playbook automatically." },
-      { stage: "Execution", state: "pending", summary: "Execution stages will appear after routing completes." }
-    ],
-    messages: [
-      {
-        role: "system",
-        author: "Work Delivery Agent",
-        timestamp: "now",
-        chips: ["Intake", profileName],
-        body: `
-          <p>Start with a requirement, issue URL, defect number, case reference, or direct task description. The generic pipeline will resolve the source adapter, normalize the work item, select <strong>${profile?.defaultPlaybook || "the right playbook"}</strong>, and emit a routing trace.</p>
-        `
-      }
-    ]
-  };
+function renderInspector() {
+  renderConnectors();
 
-  chats.unshift(draft);
-  activeChatId = draft.id;
-  setWorkspaceView("threads");
-  renderHistory();
-  renderChat();
+  const activeConnector = connectors.find((connector) => connector.id === activeConnectorId);
+  connectorFocus.innerHTML = activeConnector ? `
+    <div class="focus-kicker">Connector focus</div>
+    <div class="focus-title-row">
+      <h3 class="focus-title">${activeConnector.name}</h3>
+      <span class="connector-status ${connectorStatusClass(activeConnector.status)}">${activeConnector.status}</span>
+    </div>
+    <div class="focus-meta">${activeConnector.mode}</div>
+    <div class="focus-stats">
+      <div class="focus-stat">
+        <span>Health</span>
+        <strong>${activeConnector.health}</strong>
+      </div>
+      <div class="focus-stat">
+        <span>Latency</span>
+        <strong>${activeConnector.latency}</strong>
+      </div>
+    </div>
+    <div class="focus-section">
+      <div class="focus-section-title">Capabilities</div>
+      <div class="focus-chip-row">
+        ${(activeConnector.capabilities || []).map((capability) => `<span class="focus-chip">${capability}</span>`).join("")}
+      </div>
+    </div>
+    <div class="focus-section">
+      <div class="focus-section-title">Environment keys</div>
+      <div class="focus-list">
+        ${(activeConnector.env || []).map((item) => `<div class="focus-list-item">${item}</div>`).join("")}
+      </div>
+    </div>
+  ` : '<div class="history-empty">No connector selected.</div>';
+
+  providerGrid.innerHTML = "";
+  providers.forEach((provider) => {
+    const card = document.createElement("div");
+    card.className = "provider-card";
+    card.innerHTML = `
+      <div class="provider-name">${provider.name}</div>
+      <div class="provider-source">${provider.source}</div>
+    `;
+    providerGrid.appendChild(card);
+  });
+
+  policyList.innerHTML = "";
+  policies.forEach((policy) => {
+    const row = document.createElement("div");
+    row.className = "policy-row";
+    row.innerHTML = `<span>${policy.label}</span><span class="policy-value">${policy.value}</span>`;
+    policyList.appendChild(row);
+  });
+
+  secretBindingsList.innerHTML = "";
+  secretBindings.forEach((binding) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "secret-row";
+    wrapper.innerHTML = `
+      <div class="policy-row">
+        <span>${binding.label}</span>
+        <span class="policy-value">${binding.value}</span>
+      </div>
+      <div class="policy-subtext">${binding.detail}</div>
+    `;
+    secretBindingsList.appendChild(wrapper);
+  });
 }
 
-function createTemplateChat(template) {
-  const threadNumber = chats.length + 1;
-  const draft = {
-    id: `${template.id}-${threadNumber}`,
-    title: `${template.title} ${threadNumber}`,
-    source: "Direct input / Template",
+function createTemplateRun(template) {
+  const matchingWorkType = workTypes.find((workType) => String(workType.profileId).toLowerCase() === String(template.profile).toLowerCase()) || workTypes[0];
+  const runNumber = liveRuns.length + 1;
+  const newRunId = `kd-run-${170 + runNumber}`;
+  const newThreadId = `thread-${runNumber}`;
+
+  chats.unshift({
+    id: newThreadId,
+    title: `${template.title} ${runNumber}`,
+    source: template.sourceGraph,
     time: "just now",
     stage: template.stage,
     profile: template.profile,
     sourceGraph: template.sourceGraph,
     workflowStage: template.stage,
-    meta: ["Template seeded", "Awaiting source adapter selection", "Playbook chain not selected yet"],
+    meta: ["Template seeded", "Awaiting full execution", "Thread attached to run"],
     insights: [
       { label: "Confidence", value: "Pending", tone: "neutral" },
       { label: "Risk", value: "Unknown", tone: "warn" },
       { label: "Validation", value: "Not planned", tone: "neutral" },
-      { label: "Writeback", value: "Not armed", tone: "neutral" }
+      { label: "Writeback", value: "Not armed", tone: "neutral" },
     ],
     timeline: [
-      { stage: "Intake", state: "active", summary: "Template thread created and waiting for a requirement or source identifier." },
-      { stage: "Routing", state: "pending", summary: "The routing layer will pick the initial playbook after source normalization." },
-      { stage: "Execution", state: "pending", summary: "Execution path will depend on the selected playbook chain." }
+      { stage: "Intake", state: "active", summary: "Run created from a starter flow and waiting for execution." },
+      { stage: "Routing", state: "pending", summary: "The work type and playbook path will be confirmed on launch." },
+      { stage: "Execution", state: "pending", summary: "Execution begins after operator confirmation." },
     ],
     messages: [
       {
         role: "system",
-        author: "Work Delivery Agent",
+        author: "Run Bootstrap",
         timestamp: "now",
-        chips: [template.profile, "Template"],
-        body: `<p>${template.prompt}</p>`
-      }
-    ]
-  };
-
-  chats.unshift(draft);
-  activeChatId = draft.id;
-  setActiveProfile(normalizeProfileId(template.profile));
-  setWorkspaceView("threads");
-  renderHistory();
-  renderChat();
-  composerInput.value = template.prompt;
-}
-
-function appendComposerMessage() {
-  const text = composerInput.value.trim();
-  const chat = activeChat();
-  if (!text || !chat) return;
-
-  const now = new Date();
-  const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-  chat.messages.push({
-    role: "user",
-    author: "Delivery Operator",
-    timestamp,
-    chips: ["Manual instruction"],
-    body: `<p>${text.replace(/\n/g, "<br>")}</p>`
+        chips: ["Starter flow", template.profile],
+        body: `<p>${template.prompt}</p>`,
+      },
+    ],
   });
 
-  chat.messages.push({
-    role: "agent",
-    author: "Work Delivery Agent",
-    timestamp,
-    chips: ["Queued update", "Playbook routing"],
-    body: `
-      <p>The request has been staged in the operator console. In a live runtime this would re-run source resolution, update the decision trace, refresh playbook eligibility, and queue the next lifecycle action for the active thread.</p>
-    `
+  liveRuns.unshift({
+    id: newRunId,
+    workTypeId: matchingWorkType.id,
+    threadId: newThreadId,
+    status: "WAITING",
+    playbook: matchingWorkType.playbooks?.[0] || "work-intake",
+    stage: "intake",
+    source: `Direct / ${template.title}`,
+    duration: "0m",
+    risk: "Medium",
+    next: "Confirm launch and route work",
+    owner: "Operator",
+    approval: "Awaiting launch",
+    summary: "New run created from a starter flow and ready for routing.",
+    outputs: ["Run created"],
+    connectors: matchingWorkType.connectorIds || [],
+    trigger: "manual.launch",
   });
 
-  chat.time = "just now";
-  renderHistory();
-  renderChat();
+  activeRunId = newRunId;
+  activeWorkTypeId = matchingWorkType.id;
+  setWorkspaceView("operate");
+  setOperateView("thread");
+  renderAll();
 }
 
-function attachContextToComposer() {
-  const chat = activeChat();
-  if (!chat) return;
-
-  composerInput.value = `${composerInput.value.trim()}\n\nContext to include:\n- Source graph: ${chat.sourceGraph}\n- Active stage: ${chat.workflowStage}\n- Current gates: ${chat.meta.join(" | ")}`;
-}
-
-function handleLaunchRun() {
-  if (!activeChat()) {
-    createNewChat();
-    return;
-  }
-  appendSystemNote("Run launch requested", "The active thread has been staged for execution. In a live environment this would queue the selected playbook chain.");
-}
-
-function handleExportBrief() {
-  const chat = activeChat();
-  if (!chat) return;
-
-  const brief = [
-    `Thread: ${chat.title}`,
-    `Profile: ${chat.profile}`,
-    `Stage: ${chat.workflowStage}`,
-    `Source: ${chat.source}`,
-    `Next: ${nextActionValue.textContent}`
-  ].join("\n");
-
-  composerInput.value = `${brief}\n\n${composerInput.value}`.trim();
-  appendSystemNote("Brief exported", "A short delivery brief has been inserted into the composer so it can be shared or refined.");
-}
-
-function handlePauseRun() {
-  const chat = activeChat();
-  if (!chat) return;
-  chat.meta = chat.meta.filter((item) => !item.startsWith("Run state:"));
-  chat.meta.push("Run state: Paused");
-  appendSystemNote("Run paused", "The active thread is now marked as paused and will not advance until resumed.");
-  renderChat();
-  renderHistory();
-}
-
-function handleConnectSourceAdapter() {
-  setWorkspaceView("admin");
-  appendSystemNote("Adapter workflow opened", "Use the connector catalog and secrets panel to configure a new source adapter safely.");
-}
-
-function handleSwitchProfile() {
-  const storyProfile = profiles.find((profile) => profile.id === "story");
-  if (!storyProfile) return;
-  setActiveProfile(storyProfile.id, { view: "profiles" });
-  appendSystemNote("Profile switched", "The console is now scoped to the story lifecycle profile.");
-}
-
-function handleContextDiagnostics() {
-  if (connectorPanel) {
-    connectorPanel.classList.add("open");
-  }
-  appendSystemNote("Diagnostics opened", "Context providers and connector capabilities are now in focus on the right-hand panel.");
+function createNewRun() {
+  createTemplateRun(templates[0] || {
+    title: "Ad hoc work item",
+    profile: "Task",
+    sourceGraph: "Direct input",
+    stage: "Intake",
+    prompt: "Start a dry-run and collect enough context to choose the right work type.",
+    meta: "ad hoc",
+  });
 }
 
 function appendSystemNote(chip, body) {
-  const chat = activeChat();
-  if (!chat) return;
+  const thread = activeThread();
+  if (!thread) return;
 
   const now = new Date();
   const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  chat.messages.push({
+  thread.messages.push({
     role: "agent",
-    author: "Console Control Plane",
+    author: "Control Plane",
     timestamp,
     chips: [chip],
-    body: `<p>${body}</p>`
+    body: `<p>${body}</p>`,
   });
+}
+
+function appendThreadMessage() {
+  const thread = activeThread();
+  const text = composerInput.value.trim();
+  if (!thread || !text) return;
+
+  const now = new Date();
+  const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  thread.messages.push({
+    role: "user",
+    author: "Operator",
+    timestamp,
+    chips: ["Manual intervention"],
+    body: `<p>${text.replace(/\n/g, "<br>")}</p>`,
+  });
+
+  thread.messages.push({
+    role: "agent",
+    author: "Run Analysis",
+    timestamp,
+    chips: ["Thread update", "Run scoped"],
+    body: "<p>The run thread has been updated. In a live environment this would persist the intervention, refresh the run summary, and notify any waiting approval or routing surfaces.</p>",
+  });
+
+  renderOperateThread();
+  renderRunRail();
+}
+
+function attachRunContext() {
+  const run = activeRun();
+  if (!run) return;
+  composerInput.value = `${composerInput.value.trim()}\n\nRun context:\n- Run id: ${run.id}\n- Work type: ${workTypeById(run.workTypeId)?.name || "Unknown"}\n- Stage: ${run.stage}\n- Next: ${run.next}`;
+}
+
+function handleLaunchRun() {
+  if (!activeRun()) {
+    createNewRun();
+    return;
+  }
+  appendSystemNote("Launch requested", "The selected run has been staged for execution. In a live environment this would queue the playbook chain and allocate runtime capacity.");
+  setWorkspaceView("operate");
+  setOperateView("thread");
+  renderOperateThread();
+}
+
+function handleExportBrief() {
+  const run = activeRun();
+  if (!run) return;
+  const workType = workTypeById(run.workTypeId);
+
+  composerInput.value = [
+    `Run: ${run.id}`,
+    `Work type: ${workType?.name || "n/a"}`,
+    `Source: ${run.source}`,
+    `Stage: ${run.stage}`,
+    `Next: ${run.next}`,
+    "",
+    composerInput.value,
+  ].join("\n").trim();
+  appendSystemNote("Brief exported", "A run-level brief has been inserted into the thread composer.");
+  renderOperateThread();
+}
+
+function handlePauseRun() {
+  const run = activeRun();
+  if (!run) return;
+  run.status = "WAITING";
+  run.next = "Resume required";
+  run.approval = "Operator paused execution";
+  appendSystemNote("Run paused", "The selected run is paused. The thread remains open for troubleshooting and next-step planning.");
+  renderAll();
+}
+
+function handleConnectorsBuildOpen() {
+  setWorkspaceView("build");
+  setBuildView("connectors");
+  renderHeader();
+}
+
+function handleSwitchWorkType() {
+  const storyWorkType = workTypes.find((workType) => workType.id === "story-delivery");
+  if (!storyWorkType) return;
+  activeWorkTypeId = storyWorkType.id;
+  setWorkspaceView("build");
+  setBuildView("workTypes");
+  renderAll();
+}
+
+function handleContextDiagnostics() {
+  connectorPanel.classList.add("open");
+  appendSystemNote("Diagnostics opened", "The inspector is now focused on connectors, policies, and secret scope for the current run.");
+  renderOperateThread();
+}
+
+function renderAll() {
+  renderHeader();
+  renderOverviewStrip();
+  renderRunRail();
+  renderTemplates();
+  renderRunBanner();
+  renderOperateOverview();
+  renderOperateTimeline();
+  renderOperateThread();
+  renderOperateArtifacts();
+  renderWorkTypes();
+  renderOnboarding();
+  renderBuildConnectors();
+  renderPlaybooks();
+  renderRoutingMatrix();
+  renderWorkflowBindings();
+  renderChainGraph();
+  renderSecrets();
+  renderRunsBoard();
+  renderDecisionTraceBoard();
+  renderFailureHeatmap();
+  renderInspector();
 }
 
 function closePanelsOnMobile() {
@@ -1357,48 +1592,44 @@ function closePanelsOnMobile() {
   }
 }
 
-newChatButton.addEventListener("click", createNewChat);
-sendButton.addEventListener("click", appendComposerMessage);
-attachContextButton.addEventListener("click", attachContextToComposer);
+newRunButton.addEventListener("click", createNewRun);
 launchRunButton.addEventListener("click", handleLaunchRun);
 exportBriefButton.addEventListener("click", handleExportBrief);
 pauseRunButton.addEventListener("click", handlePauseRun);
-connectSourceAdapterButton.addEventListener("click", handleConnectSourceAdapter);
-switchProfileButton.addEventListener("click", handleSwitchProfile);
+attachContextButton.addEventListener("click", attachRunContext);
+sendButton.addEventListener("click", appendThreadMessage);
+connectSourceAdapterButton.addEventListener("click", handleConnectorsBuildOpen);
+switchWorkTypeButton.addEventListener("click", handleSwitchWorkType);
 contextDiagnosticsButton.addEventListener("click", handleContextDiagnostics);
+openBuildConnectorsButton.addEventListener("click", handleConnectorsBuildOpen);
+
+operateShortcut.addEventListener("click", () => setWorkspaceView("operate"));
+buildShortcut.addEventListener("click", () => setWorkspaceView("build"));
+observabilityShortcut.addEventListener("click", () => setWorkspaceView("observability"));
 
 workspaceTabs.forEach((tab) => {
   tab.addEventListener("click", () => setWorkspaceView(tab.dataset.view));
 });
 
-playbooksShortcut.addEventListener("click", () => setWorkspaceView("playbooks"));
-observabilityShortcut.addEventListener("click", () => setWorkspaceView("observability"));
-profilesShortcut.addEventListener("click", () => setWorkspaceView("profiles"));
-adminShortcut.addEventListener("click", () => setWorkspaceView("admin"));
+operateSubviewTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setOperateView(tab.dataset.operateView));
+});
+
+buildSubviewTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setBuildView(tab.dataset.buildView));
+});
 
 globalSearchInput.addEventListener("input", (event) => {
   searchTerm = event.target.value.trim().toLowerCase();
-  renderHistory();
-  renderTemplates();
-  renderChat();
-  renderConnectors();
-  renderProfiles();
-  renderAdminConsole();
-  renderPlaybooks();
-  renderRoutingMatrix();
-  renderWorkflowBindings();
-  renderChainGraph();
-  renderRuns();
-  renderDecisionTrace();
-  renderFailureHeatmap();
+  renderAll();
 });
 
 filterChips.forEach((chip) => {
   chip.addEventListener("click", () => {
     activeFilter = chip.dataset.filter || "all";
     filterChips.forEach((button) => button.classList.toggle("active", button === chip));
-    renderHistory();
-    renderChat();
+    renderRunRail();
+    renderRunsBoard();
   });
 });
 
@@ -1419,21 +1650,7 @@ window.addEventListener("resize", () => {
   }
 });
 
-renderOverview();
-renderHistory();
-renderTemplates();
-renderChat();
-renderConnectors();
-renderProviders();
-renderPolicies();
-renderSecretBindings();
-renderProfiles();
-renderAdminConsole();
-renderPlaybooks();
-renderRoutingMatrix();
-renderWorkflowBindings();
-renderChainGraph();
-renderRuns();
-renderDecisionTrace();
-renderFailureHeatmap();
+renderAll();
 setWorkspaceView(activeWorkspaceView);
+setOperateView(activeOperateView);
+setBuildView(activeBuildView);

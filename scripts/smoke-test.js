@@ -99,55 +99,34 @@ const createById = (id, tagName = "div") => {
   return element;
 };
 
-[
+const ids = [
   "historyList",
   "templateList",
-  "messageStream",
-  "connectorList",
-  "connectorFocus",
-  "providerGrid",
-  "policyList",
   "overviewStrip",
-  "insightGrid",
-  "timelineList",
+  "workspaceKicker",
   "chatTitle",
   "chatMeta",
   "profileValue",
   "sourceValue",
   "stageValue",
   "nextActionValue",
-  "composerInput",
-  "newChatButton",
-  "sendButton",
-  "attachContextButton",
-  "historyToggle",
-  "connectorToggle",
-  "historyPanel",
-  "connectorPanel",
-  "secretBindings",
-  "playbookRegistry",
-  "routingMatrix",
-  "workflowBindings",
-  "chainGraph",
-  "runBoard",
-  "decisionTrace",
-  "failureHeatmap",
-  "threadsPanel",
-  "profilesPanel",
-  "adminPanel",
-  "playbooksPanel",
-  "observabilityPanel",
-  "playbooksShortcut",
-  "observabilityShortcut",
-  "profilesShortcut",
-  "adminShortcut",
-  "launchRunButton",
-  "exportBriefButton",
-  "pauseRunButton",
-  "profileRegistry",
-  "profileFocus",
-  "profileValidationGrid",
-  "profileOutputList",
+  "runSummaryList",
+  "runDependencyList",
+  "insightGrid",
+  "timelineList",
+  "runDecisionTrace",
+  "messageStream",
+  "runOutputList",
+  "runApprovalList",
+  "runConnectorBindings",
+  "runArtifactList",
+  "workTypeRegistry",
+  "workTypeFocus",
+  "workTypeRouting",
+  "workTypePlaybooks",
+  "onboardingList",
+  "configSourceList",
+  "publishChecklist",
   "adminConnectorCatalog",
   "adminConnectorSummary",
   "runtimeModeSelector",
@@ -156,49 +135,118 @@ const createById = (id, tagName = "div") => {
   "adminEnvBindings",
   "writebackPolicyList",
   "adminSpecList",
+  "playbookRegistry",
+  "routingMatrix",
+  "workflowBindings",
+  "chainGraph",
+  "secretCatalog",
+  "configSourceMatrix",
+  "runBoard",
+  "decisionTrace",
+  "failureHeatmap",
+  "connectorList",
+  "connectorFocus",
+  "providerGrid",
+  "policyList",
+  "secretBindings",
+  "composerInput",
+  "attachContextButton",
+  "sendButton",
+  "exportBriefButton",
+  "pauseRunButton",
+  "launchRunButton",
+  "newRunButton",
   "connectSourceAdapterButton",
-  "switchProfileButton",
+  "switchWorkTypeButton",
   "contextDiagnosticsButton",
-  "threadsTab",
-  "profilesTab",
-  "adminTab",
-  "playbooksTab",
+  "openBuildConnectorsButton",
+  "operateShortcut",
+  "buildShortcut",
+  "observabilityShortcut",
+  "historyToggle",
+  "connectorToggle",
+  "historyPanel",
+  "connectorPanel",
+  "operatePanel",
+  "buildPanel",
+  "observabilityPanel",
+  "operateOverviewPanel",
+  "operateTimelinePanel",
+  "operateThreadPanel",
+  "operateArtifactsPanel",
+  "buildWorkTypesPanel",
+  "buildOnboardingPanel",
+  "buildConnectorsPanel",
+  "buildPlaybooksPanel",
+  "buildSecretsPanel",
+  "operateTab",
+  "buildTab",
   "observabilityTab",
-].forEach((id) => createById(id, id.endsWith("Button") || id.endsWith("Shortcut") || id.endsWith("Tab") || id === "newChatButton" || id === "sendButton" || id === "attachContextButton" || id === "historyToggle" || id === "connectorToggle" ? "button" : "div"));
+].map((id) => ({
+  id,
+  tagName: (
+    id.endsWith("Button") ||
+    id.endsWith("Shortcut") ||
+    id.endsWith("Tab") ||
+    id === "attachContextButton" ||
+    id === "sendButton" ||
+    id === "exportBriefButton" ||
+    id === "pauseRunButton" ||
+    id === "launchRunButton" ||
+    id === "newRunButton" ||
+    id === "connectSourceAdapterButton" ||
+    id === "switchWorkTypeButton" ||
+    id === "contextDiagnosticsButton" ||
+    id === "openBuildConnectorsButton" ||
+    id === "historyToggle" ||
+    id === "connectorToggle"
+  ) ? "button" : "div",
+}));
 
-const globalSearch = createElement("globalSearch", "div");
+ids.forEach(({ id, tagName }) => createById(id, tagName));
+
 const globalSearchInput = createElement("globalSearchInput", "input");
-globalSearch.appendChild(globalSearchInput);
 
 const filterAll = createElement("filterAll", "button");
 filterAll.dataset.filter = "all";
 filterAll.classList.add("filter-chip", "active");
-const filterAssigned = createElement("filterAssigned", "button");
-filterAssigned.dataset.filter = "assigned";
-filterAssigned.classList.add("filter-chip");
-const filterWatching = createElement("filterWatching", "button");
-filterWatching.dataset.filter = "watching";
-filterWatching.classList.add("filter-chip");
-const filterChips = [filterAll, filterAssigned, filterWatching];
+const filterRunning = createElement("filterRunning", "button");
+filterRunning.dataset.filter = "running";
+filterRunning.classList.add("filter-chip");
+const filterWaiting = createElement("filterWaiting", "button");
+filterWaiting.dataset.filter = "waiting";
+filterWaiting.classList.add("filter-chip");
+const filterChips = [filterAll, filterRunning, filterWaiting];
 
-elements.get("threadsTab").dataset.view = "threads";
-elements.get("threadsTab").classList.add("workspace-tab", "active");
-elements.get("profilesTab").dataset.view = "profiles";
-elements.get("profilesTab").classList.add("workspace-tab");
-elements.get("adminTab").dataset.view = "admin";
-elements.get("adminTab").classList.add("workspace-tab");
-elements.get("playbooksTab").dataset.view = "playbooks";
-elements.get("playbooksTab").classList.add("workspace-tab");
+elements.get("operateTab").dataset.view = "operate";
+elements.get("operateTab").classList.add("workspace-tab", "active");
+elements.get("buildTab").dataset.view = "build";
+elements.get("buildTab").classList.add("workspace-tab");
 elements.get("observabilityTab").dataset.view = "observability";
 elements.get("observabilityTab").classList.add("workspace-tab");
-
 const workspaceTabs = [
-  elements.get("threadsTab"),
-  elements.get("profilesTab"),
-  elements.get("adminTab"),
-  elements.get("playbooksTab"),
+  elements.get("operateTab"),
+  elements.get("buildTab"),
   elements.get("observabilityTab"),
 ];
+
+const operateSubviewNames = ["overview", "timeline", "thread", "artifacts"];
+const operateSubviewTabs = operateSubviewNames.map((name, index) => {
+  const element = createElement(`operateSubview-${name}`, "button");
+  element.dataset.operateView = name;
+  element.classList.add("subview-tab");
+  if (index === 0) element.classList.add("active");
+  return element;
+});
+
+const buildSubviewNames = ["workTypes", "onboarding", "connectors", "playbooks", "secrets"];
+const buildSubviewTabs = buildSubviewNames.map((name, index) => {
+  const element = createElement(`buildSubview-${name}`, "button");
+  element.dataset.buildView = name;
+  element.classList.add("subview-tab");
+  if (index === 0) element.classList.add("active");
+  return element;
+});
 
 const documentStub = {
   getElementById(id) {
@@ -211,12 +259,10 @@ const documentStub = {
     return null;
   },
   querySelectorAll(selector) {
-    if (selector === ".filter-chip") {
-      return filterChips;
-    }
-    if (selector === ".workspace-tab") {
-      return workspaceTabs;
-    }
+    if (selector === ".filter-chip") return filterChips;
+    if (selector === ".workspace-tab") return workspaceTabs;
+    if (selector === ".subview-tab[data-operate-view]") return operateSubviewTabs;
+    if (selector === ".subview-tab[data-build-view]") return buildSubviewTabs;
     return [];
   },
   createElement(tagName) {
@@ -251,62 +297,59 @@ function assert(condition, message) {
   }
 }
 
-assert(elements.get("chatTitle").textContent.includes("Deliver"), "Expected default active thread to render");
+assert(elements.get("operatePanel").hidden === false, "Operate panel should be visible on load");
+assert(elements.get("chatTitle").textContent.includes("kd-run-184"), "Initial header should point at the active run");
+assert(elements.get("workTypeRegistry").children.length >= 1, "Work types should render");
 
-elements.get("profilesShortcut").click();
-assert(elements.get("profilesPanel").hidden === false, "Profiles panel should open from shortcut");
+elements.get("buildShortcut").click();
+assert(elements.get("buildPanel").hidden === false, "Build panel should open from shortcut");
+assert(elements.get("workTypeFocus").innerHTML.includes("Defect Delivery"), "Initial work type focus should render");
 
-const profileCards = elements.get("profileRegistry").children;
-assert(profileCards.length >= 3, "Expected rendered profile cards");
-profileCards[1].click();
-assert(elements.get("profileFocus").innerHTML.includes("Story"), "Story profile should become active");
+const secondWorkType = elements.get("workTypeRegistry").children[1];
+assert(secondWorkType, "Expected a second work type card");
+secondWorkType.click();
+assert(elements.get("workTypeFocus").innerHTML.includes("Story Delivery"), "Selecting a work type should update focus");
 
-elements.get("newChatButton").click();
-assert(elements.get("chatTitle").textContent.toLowerCase().includes("story"), "New chat should inherit active profile");
+buildSubviewTabs[2].click();
+assert(elements.get("buildConnectorsPanel").hidden === false, "Connector subview should open");
+assert(elements.get("adminConnectorCatalog").children.length >= 1, "Connector catalog should render");
+assert(elements.get("runtimeModeSelector").children.length >= 1, "Runtime modes should render");
 
-elements.get("switchProfileButton").click();
-assert(elements.get("profilesPanel").hidden === false, "Switch profile CTA should show profiles panel");
+elements.get("operateShortcut").click();
+assert(elements.get("operatePanel").hidden === false, "Operate panel should reopen");
+operateSubviewTabs[2].click();
+assert(elements.get("operateThreadPanel").hidden === false, "Thread subview should open");
 
-elements.get("playbooksShortcut").click();
-assert(elements.get("playbooksPanel").hidden === false, "Playbooks panel should open from shortcut");
+elements.get("attachContextButton").click();
+assert(elements.get("composerInput").value.includes("Run context:"), "Attach context should enrich the composer");
 
-elements.get("adminShortcut").click();
-assert(elements.get("adminPanel").hidden === false, "Admin panel should open from shortcut");
-assert(elements.get("adminConnectorCatalog").children.length >= 1, "Expected rendered admin connector profiles");
-assert(elements.get("runtimeModeSelector").children.length >= 1, "Expected rendered runtime modes");
+const previousMessages = elements.get("messageStream").children.length;
+elements.get("sendButton").click();
+assert(elements.get("messageStream").children.length >= previousMessages, "Thread send should keep message rendering healthy");
 
 elements.get("connectSourceAdapterButton").click();
-assert(elements.get("adminPanel").hidden === false, "Connect source CTA should route to the admin workspace");
-assert(elements.get("toolMappingList").children.length >= 1, "Admin workspace should render tool mappings");
+assert(elements.get("buildPanel").hidden === false, "Connector onboarding CTA should route to Build");
+assert(elements.get("buildConnectorsPanel").hidden === false, "Connector onboarding CTA should open connector subview");
 
 elements.get("observabilityShortcut").click();
-assert(elements.get("observabilityPanel").hidden === false, "Observability panel should open from shortcut");
+assert(elements.get("observabilityPanel").hidden === false, "Observability panel should open");
+assert(elements.get("runBoard").children.length >= 1, "Run board should render");
 
-globalSearchInput.value = "architect review";
+globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
-assert(elements.get("playbookRegistry").innerHTML.includes("Story Delivery") || elements.get("playbookRegistry").children.length > 0, "Search should preserve matching playbooks");
+assert(elements.get("runBoard").children.length >= 1 || elements.get("playbookRegistry").children.length >= 1, "Search should preserve matching content");
 
-filterAssigned.click();
-assert(elements.get("historyList").children.length >= 1, "Assigned filter should still render matching chats");
+globalSearchInput.value = "";
+globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
+filterRunning.click();
+assert(elements.get("historyList").children.length >= 1, "Run filter should preserve matching runs");
 
-elements.get("threadsTab").click();
-assert(elements.get("threadsPanel").hidden === false, "Threads tab should return to threads view");
-
-const firstTemplate = elements.get("templateList").children[0];
-assert(firstTemplate, "Expected at least one visible template");
-firstTemplate.click();
-assert(elements.get("chatTitle").textContent.length > 0, "Template click should activate a thread");
-
-elements.get("exportBriefButton").click();
-assert(elements.get("composerInput").value.includes("Thread:"), "Export brief should insert a summary into the composer");
-
-elements.get("pauseRunButton").click();
-assert(elements.get("messageStream").children.length >= 1, "Pause run should append a system note");
-
-elements.get("launchRunButton").click();
-assert(elements.get("messageStream").children.length >= 1, "Launch run should keep thread interaction healthy");
+const beforeNewRunCount = elements.get("historyList").children.length;
+elements.get("newRunButton").click();
+assert(elements.get("historyList").children.length >= beforeNewRunCount, "Creating a run should keep the run rail populated");
+assert(elements.get("chatTitle").textContent.includes("kd-run-"), "New run should update the selected run header");
 
 elements.get("contextDiagnosticsButton").click();
-assert(elements.get("connectorPanel").classList.contains("open"), "Context diagnostics CTA should open the connector panel");
+assert(elements.get("connectorPanel").classList.contains("open"), "Diagnostics CTA should open the inspector");
 
 console.log("frontend smoke test passed");

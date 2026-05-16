@@ -45,6 +45,146 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       prompt: "Run the case diagnosis playbook, look for known issue patterns, and decide whether the chain should escalate into a defect workflow."
     }
   ],
+  workTypes: [
+    {
+      id: "defect-delivery",
+      name: "Defect Delivery",
+      status: "LIVE",
+      profileId: "defect",
+      summary: "End-to-end defect handling with guarded source sync, runtime validation, and PR packaging.",
+      defaultRunMode: "Autonomous with gates",
+      routingSignals: ["DEF prefix", "bug semantics", "reproduction fields"],
+      connectorIds: ["servicenow-bt1", "github-issues", "playwright", "knowledge-plane"],
+      playbooks: ["defect-intake", "defect-fix", "defect-verify", "defect-closeout"],
+      outputs: ["outcome", "report", "pull_request", "regression_tests"],
+      approvalPosture: "PR + source sync approval",
+      publishState: "Promoted to production",
+      testSurface: "Runtime reproduction, repo-local tests, generated regression coverage"
+    },
+    {
+      id: "story-delivery",
+      name: "Story Delivery",
+      status: "LIVE",
+      profileId: "story",
+      summary: "Build-oriented feature delivery with acceptance criteria, implementation planning, and repo workflows.",
+      defaultRunMode: "Operator-confirmed execution",
+      routingSignals: ["enhancement semantics", "acceptance criteria", "repo hints"],
+      connectorIds: ["github-issues", "knowledge-plane", "playwright"],
+      playbooks: ["story-intake", "story-delivery", "source-sync"],
+      outputs: ["outcome", "implementation_summary", "report", "rollout_notes"],
+      approvalPosture: "Architect and product-owner approval",
+      publishState: "Promoted to production",
+      testSurface: "Acceptance criteria validation and repo-local checks"
+    },
+    {
+      id: "case-resolution",
+      name: "Case Resolution",
+      status: "LIVE",
+      profileId: "case",
+      summary: "Diagnosis-first support workflow with workaround handling and controlled escalation into defect delivery.",
+      defaultRunMode: "Assisted triage",
+      routingSignals: ["support labels", "customer impact", "environment notes"],
+      connectorIds: ["servicenow-bt1", "knowledge-plane"],
+      playbooks: ["case-diagnosis", "source-sync", "defect-intake"],
+      outputs: ["outcome", "diagnosis", "customer_safe_summary", "next_action"],
+      approvalPosture: "Customer-safe writeback",
+      publishState: "Promoted to production",
+      testSurface: "Environment validation and knowledge-backed workaround checks"
+    },
+    {
+      id: "enterprise-onboarding",
+      name: "Enterprise Connector Onboarding",
+      status: "STAGED",
+      profileId: "task",
+      summary: "Reusable onboarding workflow for new external work sources using proxy MCP or vendor-native MCP bindings.",
+      defaultRunMode: "Dry-run first",
+      routingSignals: ["connector catalog selection", "schema mapping completed", "test item bound"],
+      connectorIds: ["enterprise-template", "knowledge-plane"],
+      playbooks: ["task-intake", "source-sync"],
+      outputs: ["connector_profile", "tool_mapping", "promotion_decision"],
+      approvalPosture: "Publish after dry-run and policy review",
+      publishState: "Draft",
+      testSurface: "Normalized schema preview, dry-run routing, writeback policy simulation"
+    }
+  ],
+  onboardingWorkflow: [
+    {
+      step: "Choose source",
+      owner: "Builder",
+      detail: "Start from ServiceNow, GitHub, Jira, custom proxy MCP, or vendor-native MCP."
+    },
+    {
+      step: "Bind credentials",
+      owner: "Platform admin",
+      detail: "Connect repo secrets, runner secrets, vault references, or control-plane managed secrets."
+    },
+    {
+      step: "Map source schema",
+      owner: "Builder",
+      detail: "Normalize title, description, severity, acceptance criteria, comments, labels, and attachments."
+    },
+    {
+      step: "Define work type",
+      owner: "Workflow owner",
+      detail: "Select Defect, Story, Case, Task, or a custom work delivery type."
+    },
+    {
+      step: "Set routing rules",
+      owner: "Workflow owner",
+      detail: "Combine deterministic signals and AI classification with a documented fallback path."
+    },
+    {
+      step: "Attach playbook",
+      owner: "Workflow owner",
+      detail: "Compose the execution chain and approval gates for this work type."
+    },
+    {
+      step: "Configure runtime",
+      owner: "Platform admin",
+      detail: "Choose proxy MCP or vendor MCP, runners, triggers, timeouts, and concurrency."
+    },
+    {
+      step: "Set writeback policy",
+      owner: "Platform admin",
+      detail: "Explicitly allow or deny comments, labels, attachments, field updates, transitions, and PR creation."
+    },
+    {
+      step: "Test with sample item",
+      owner: "Workflow owner",
+      detail: "Dry-run normalization, routing, playbook choice, and secret resolution before promotion."
+    },
+    {
+      step: "Publish",
+      owner: "Release manager",
+      detail: "Promote to the target environment with audit history and rollback support."
+    }
+  ],
+  configSources: [
+    {
+      label: "Repo file",
+      detail: "Checked-in config such as connector, playbook, and routing YAML or JSON."
+    },
+    {
+      label: "Environment variable",
+      detail: "Plain runtime configuration injected by shell, CI, or platform runtime."
+    },
+    {
+      label: "Repo secret",
+      detail: "GitHub repository-level secret used by workflow or Pages automation."
+    },
+    {
+      label: "Runner secret",
+      detail: "Environment-specific credential injected only on the runtime host."
+    },
+    {
+      label: "Runtime injected value",
+      detail: "Ephemeral value discovered or minted at execution time."
+    },
+    {
+      label: "Control-plane override",
+      detail: "Admin-saved value that supersedes defaults for a specific environment."
+    }
+  ],
   profiles: [
     {
       id: "defect",
@@ -968,33 +1108,57 @@ window.KNOCKDOWN_CONSOLE_DATA = {
   liveRuns: [
     {
       id: "kd-run-184",
+      workTypeId: "defect-delivery",
+      threadId: "defect-bt1",
       status: "RUNNING",
       playbook: "defect-verify",
       stage: "verify_runtime",
       source: "BT1 / DEF0842192",
       duration: "18m",
       risk: "Medium",
-      next: "Await source sync approval"
+      next: "Await source sync approval",
+      owner: "UXC Controls",
+      approval: "Human gate before source sync",
+      summary: "Validation is green and the run is waiting on the final guarded writeback gate.",
+      outputs: ["Fix verified", "PR package prepared", "Regression gap identified"],
+      connectors: ["servicenow-bt1", "github-issues", "playwright"],
+      trigger: "playbook.completed:defect-fix"
     },
     {
       id: "kd-run-177",
+      workTypeId: "story-delivery",
+      threadId: "story-github",
       status: "WAITING",
       playbook: "story-delivery",
       stage: "review",
       source: "GitHub / knowdown/framework#42",
       duration: "42m",
       risk: "High",
-      next: "Architect approval required"
+      next: "Architect approval required",
+      owner: "Platform DX",
+      approval: "Architect review pending",
+      summary: "Implementation plan is prepared, but the run is blocked on design and architecture sign-off.",
+      outputs: ["Three-workstream plan", "Cross-repo impact map"],
+      connectors: ["github-issues", "knowledge-plane"],
+      trigger: "playbook.completed:story-intake"
     },
     {
       id: "kd-run-171",
+      workTypeId: "case-resolution",
+      threadId: "case-direct",
       status: "CHAINED",
       playbook: "case-diagnosis",
       stage: "diagnose",
       source: "Direct / customer case",
       duration: "9m",
       risk: "Low",
-      next: "May trigger defect-intake"
+      next: "May trigger defect-intake",
+      owner: "Support Automation",
+      approval: "Customer-safe summary pending",
+      summary: "The case is still in diagnosis, with an escalation path into defect delivery if workaround validation fails.",
+      outputs: ["Likely environment mismatch", "Candidate workaround"],
+      connectors: ["servicenow-bt1", "knowledge-plane"],
+      trigger: "work_item.created"
     }
   ],
   decisionTrace: [
