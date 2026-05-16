@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knockdown Work Delivery Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <div class="shell-backdrop"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="mobile-toggle" id="historyToggle" aria-label="Toggle chat history">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="brand-mark">
+        <div class="brand-core"></div>
+      </div>
+      <div class="brand-copy">
+        <div class="brand-title">Knockdown</div>
+        <div class="brand-subtitle">Enterprise Work Delivery Console</div>
+      </div>
+      <span class="status-pill">Live Orchestration Shell</span>
+    </div>
+
+    <div class="topbar-center">
+      <div class="global-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.5 4a6.5 6.5 0 1 0 3.998 11.627l4.438 4.437 1.414-1.414-4.437-4.438A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"></path>
+        </svg>
+        <input type="text" placeholder="Search chats, work items, repos, connectors" aria-label="Global search">
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="ghost-button">Queue Health</button>
+      <button class="ghost-button">Profiles</button>
+      <button class="accent-button">Launch Run</button>
+      <button class="mobile-toggle mobile-toggle-right" id="connectorToggle" aria-label="Toggle connectors panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16v2H4V7Zm0 8h10v2H4v-2Zm12-1 4 2-4 2v-4Zm-2-8 4 2-4 2V6Z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-frame">
+    <aside class="history-panel" id="historyPanel">
+      <div class="panel-header">
+        <button class="new-chat-button" id="newChatButton">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 5h2v14h-2V5Zm-6 6h14v2H5v-2Z"></path>
+          </svg>
+          New Delivery Thread
+        </button>
+      </div>
+
+      <div class="history-filter">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="assigned">Assigned</button>
+        <button class="filter-chip" data-filter="watching">Watching</button>
+      </div>
+
+      <section class="history-group">
+        <div class="history-label">Today</div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+      <section class="history-group">
+        <div class="history-label">Templates</div>
+        <div class="template-list" id="templateList"></div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <section class="overview-strip" id="overviewStrip"></section>
+
+      <section class="workspace-header">
+        <div class="workspace-title-wrap">
+          <div class="workspace-kicker">Active thread</div>
+          <h1 class="workspace-title" id="chatTitle">Deliver DEF0842192 across BT1 and GitHub</h1>
+          <div class="workspace-meta" id="chatMeta"></div>
+        </div>
+
+        <div class="workspace-actions">
+          <button class="ghost-button">Export Brief</button>
+          <button class="ghost-button">Pause Run</button>
+        </div>
+      </section>
+
+      <section class="delivery-banner">
+        <div class="banner-grid">
+          <div class="banner-card">
+            <div class="banner-label">Profile</div>
+            <div class="banner-value" id="profileValue">Defect</div>
+            <div class="banner-note">Profile selected from normalized work item schema.</div>
+          </div>
+          <div class="banner-card">
+            <div class="banner-label">Source Graph</div>
+            <div class="banner-value" id="sourceValue">BT1 + GitHub + Wiki</div>
+            <div class="banner-note">Source adapter, SCM, and knowledge plane connected.</div>
+          </div>
+          <div class="banner-card">
+            <div class="banner-label">Workflow Stage</div>
+            <div class="banner-value" id="stageValue">Validation</div>
+            <div class="banner-note">Stages can shift by lifecycle profile and policy.</div>
+          </div>
+          <div class="banner-card accent">
+            <div class="banner-label">Execution</div>
+            <div class="banner-value">Autonomous</div>
+            <div class="banner-note">Human gate enabled before source sync and PR creation.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="insight-grid" id="insightGrid"></section>
+
+      <section class="workflow-layout">
+        <div class="workflow-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Lifecycle progression</div>
+              <h2 class="card-title">Workflow timeline</h2>
+            </div>
+          </div>
+          <div class="timeline-list" id="timelineList"></div>
+        </div>
+
+        <div class="workflow-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Run posture</div>
+              <h2 class="card-title">Operator summary</h2>
+            </div>
+          </div>
+          <div class="summary-list">
+            <div class="summary-row">
+              <span>Execution mode</span>
+              <strong>Autonomous with gates</strong>
+            </div>
+            <div class="summary-row">
+              <span>Context state</span>
+              <strong>Resolved from connectors</strong>
+            </div>
+            <div class="summary-row">
+              <span>Writeback</span>
+              <strong>Policy-checked before send</strong>
+            </div>
+            <div class="summary-row">
+              <span>Best next move</span>
+              <strong id="nextActionValue">Review active stage details</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="message-stream" id="messageStream"></section>
+
+      <section class="suggestion-strip">
+        <button class="suggestion-card">Connect a new source adapter</button>
+        <button class="suggestion-card">Switch lifecycle profile to story</button>
+        <button class="suggestion-card">Open context provider diagnostics</button>
+      </section>
+
+      <section class="composer-shell">
+        <div class="composer-toolbar">
+          <span class="toolbar-chip">Normalized work item</span>
+          <span class="toolbar-chip">Context assembly</span>
+          <span class="toolbar-chip">Source sync guarded</span>
+        </div>
+        <label class="composer">
+          <textarea id="composerInput" rows="4">Take the requirement, normalize it, inspect similar work, docs, tests, and ownership, then recommend the best delivery path before execution.</textarea>
+          <div class="composer-footer">
+            <div class="composer-hints">
+              <span>Profile-aware</span>
+              <span>MCP-backed</span>
+              <span>Enterprise audit trail</span>
+            </div>
+            <div class="composer-actions">
+              <button class="ghost-button" id="attachContextButton">Attach Context</button>
+              <button class="accent-button" id="sendButton">Send to Pipeline</button>
+            </div>
+          </div>
+        </label>
+      </section>
+    </main>
+
+    <aside class="connector-panel" id="connectorPanel">
+      <div class="panel-stack">
+        <section class="config-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Connector configuration</div>
+              <h2 class="card-title">Required MCP fabric</h2>
+            </div>
+            <button class="ghost-button small">Add Connector</button>
+          </div>
+
+          <div class="connector-list" id="connectorList"></div>
+          <div class="connector-focus" id="connectorFocus"></div>
+        </section>
+
+        <section class="config-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Context providers</div>
+              <h2 class="card-title">Delivery intelligence map</h2>
+            </div>
+          </div>
+
+          <div class="provider-grid" id="providerGrid"></div>
+        </section>
+
+        <section class="config-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Lifecycle policy</div>
+              <h2 class="card-title">Profile controls</h2>
+            </div>
+          </div>
+
+          <div class="policy-list" id="policyList"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <script src="./app-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
