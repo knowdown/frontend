@@ -39,9 +39,11 @@
     </div>
 
     <div class="topbar-right">
-      <button class="ghost-button">Queue Health</button>
-      <button class="ghost-button">Profiles</button>
-      <button class="accent-button">Launch Run</button>
+      <button class="ghost-button" id="observabilityShortcut">Observability</button>
+      <button class="ghost-button" id="profilesShortcut">Profiles</button>
+      <button class="ghost-button" id="adminShortcut">Admin</button>
+      <button class="ghost-button" id="playbooksShortcut">Playbooks</button>
+      <button class="accent-button" id="launchRunButton">Launch Run</button>
       <button class="mobile-toggle mobile-toggle-right" id="connectorToggle" aria-label="Toggle connectors panel">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 7h16v2H4V7Zm0 8h10v2H4v-2Zm12-1 4 2-4 2v-4Zm-2-8 4 2-4 2V6Z"></path>
@@ -89,105 +91,320 @@
         </div>
 
         <div class="workspace-actions">
-          <button class="ghost-button">Export Brief</button>
-          <button class="ghost-button">Pause Run</button>
+          <button class="ghost-button" id="exportBriefButton">Export Brief</button>
+          <button class="ghost-button" id="pauseRunButton">Pause Run</button>
+        </div>
+      </section>
+      <section class="workspace-switcher">
+        <button class="workspace-tab active" id="threadsTab" data-view="threads" type="button">Threads</button>
+        <button class="workspace-tab" id="profilesTab" data-view="profiles" type="button">Profiles</button>
+        <button class="workspace-tab" id="adminTab" data-view="admin" type="button">Admin</button>
+        <button class="workspace-tab" id="playbooksTab" data-view="playbooks" type="button">Playbooks</button>
+        <button class="workspace-tab" id="observabilityTab" data-view="observability" type="button">Observability</button>
+      </section>
+
+      <section class="workspace-panel" id="threadsPanel">
+        <section class="delivery-banner">
+          <div class="banner-grid">
+            <div class="banner-card">
+              <div class="banner-label">Profile</div>
+              <div class="banner-value" id="profileValue">Defect</div>
+              <div class="banner-note">Profile selected from normalized work item schema.</div>
+            </div>
+            <div class="banner-card">
+              <div class="banner-label">Source Graph</div>
+              <div class="banner-value" id="sourceValue">BT1 + GitHub + Wiki</div>
+              <div class="banner-note">Source adapter, SCM, and knowledge plane connected.</div>
+            </div>
+            <div class="banner-card">
+              <div class="banner-label">Workflow Stage</div>
+              <div class="banner-value" id="stageValue">Validation</div>
+              <div class="banner-note">Stages can shift by lifecycle profile and policy.</div>
+            </div>
+            <div class="banner-card accent">
+              <div class="banner-label">Execution</div>
+              <div class="banner-value">Autonomous</div>
+              <div class="banner-note">Human gate enabled before source sync and PR creation.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="insight-grid" id="insightGrid"></section>
+
+        <section class="workflow-layout">
+          <div class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Lifecycle progression</div>
+                <h2 class="card-title">Workflow timeline</h2>
+              </div>
+            </div>
+            <div class="timeline-list" id="timelineList"></div>
+          </div>
+
+          <div class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Run posture</div>
+                <h2 class="card-title">Operator summary</h2>
+              </div>
+            </div>
+            <div class="summary-list">
+              <div class="summary-row">
+                <span>Execution mode</span>
+                <strong>Autonomous with gates</strong>
+              </div>
+              <div class="summary-row">
+                <span>Context state</span>
+                <strong>Resolved from connectors</strong>
+              </div>
+              <div class="summary-row">
+                <span>Writeback</span>
+                <strong>Policy-checked before send</strong>
+              </div>
+              <div class="summary-row">
+                <span>Best next move</span>
+                <strong id="nextActionValue">Review active stage details</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="message-stream" id="messageStream"></section>
+
+        <section class="suggestion-strip">
+          <button class="suggestion-card" id="connectSourceAdapterButton">Connect a new source adapter</button>
+          <button class="suggestion-card" id="switchProfileButton">Switch lifecycle profile to story</button>
+          <button class="suggestion-card" id="contextDiagnosticsButton">Open context provider diagnostics</button>
+        </section>
+
+        <section class="composer-shell">
+          <div class="composer-toolbar">
+            <span class="toolbar-chip">Normalized work item</span>
+            <span class="toolbar-chip">Context assembly</span>
+            <span class="toolbar-chip">Source sync guarded</span>
+          </div>
+          <label class="composer">
+            <textarea id="composerInput" rows="4">Take the requirement, normalize it, inspect similar work, docs, tests, and ownership, then recommend the best delivery path before execution.</textarea>
+            <div class="composer-footer">
+              <div class="composer-hints">
+                <span>Profile-aware</span>
+                <span>MCP-backed</span>
+                <span>Enterprise audit trail</span>
+              </div>
+              <div class="composer-actions">
+                <button class="ghost-button" id="attachContextButton">Attach Context</button>
+                <button class="accent-button" id="sendButton">Send to Pipeline</button>
+              </div>
+            </div>
+          </label>
+        </section>
+      </section>
+
+      <section class="workspace-panel" id="profilesPanel" hidden>
+        <div class="control-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Lifecycle registry</div>
+                <h2 class="card-title">Profiles</h2>
+              </div>
+            </div>
+            <div class="playbook-list" id="profileRegistry"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Selected profile</div>
+                <h2 class="card-title">Profile focus</h2>
+              </div>
+            </div>
+            <div class="connector-focus" id="profileFocus"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Validation</div>
+                <h2 class="card-title">Primary modes</h2>
+              </div>
+            </div>
+            <div class="provider-grid" id="profileValidationGrid"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Outputs</div>
+                <h2 class="card-title">Contract expectations</h2>
+              </div>
+            </div>
+            <div class="policy-list" id="profileOutputList"></div>
+          </section>
         </div>
       </section>
 
-      <section class="delivery-banner">
-        <div class="banner-grid">
-          <div class="banner-card">
-            <div class="banner-label">Profile</div>
-            <div class="banner-value" id="profileValue">Defect</div>
-            <div class="banner-note">Profile selected from normalized work item schema.</div>
-          </div>
-          <div class="banner-card">
-            <div class="banner-label">Source Graph</div>
-            <div class="banner-value" id="sourceValue">BT1 + GitHub + Wiki</div>
-            <div class="banner-note">Source adapter, SCM, and knowledge plane connected.</div>
-          </div>
-          <div class="banner-card">
-            <div class="banner-label">Workflow Stage</div>
-            <div class="banner-value" id="stageValue">Validation</div>
-            <div class="banner-note">Stages can shift by lifecycle profile and policy.</div>
-          </div>
-          <div class="banner-card accent">
-            <div class="banner-label">Execution</div>
-            <div class="banner-value">Autonomous</div>
-            <div class="banner-note">Human gate enabled before source sync and PR creation.</div>
-          </div>
+      <section class="workspace-panel" id="playbooksPanel" hidden>
+        <div class="control-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Admin console</div>
+                <h2 class="card-title">Playbook registry</h2>
+              </div>
+            </div>
+            <div class="playbook-list" id="playbookRegistry"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Routing</div>
+                <h2 class="card-title">Automatic route selection</h2>
+              </div>
+            </div>
+            <div class="route-list" id="routingMatrix"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Workflow bindings</div>
+                <h2 class="card-title">GitHub Actions and runners</h2>
+              </div>
+            </div>
+            <div class="binding-list" id="workflowBindings"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Chain graph</div>
+                <h2 class="card-title">Downstream trigger topology</h2>
+              </div>
+            </div>
+            <div class="chain-list" id="chainGraph"></div>
+          </section>
         </div>
       </section>
 
-      <section class="insight-grid" id="insightGrid"></section>
+      <section class="workspace-panel" id="adminPanel" hidden>
+        <div class="control-grid admin-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Connector catalog</div>
+                <h2 class="card-title">Profiles and runtime posture</h2>
+              </div>
+            </div>
+            <div class="playbook-list" id="adminConnectorCatalog"></div>
+          </section>
 
-      <section class="workflow-layout">
-        <div class="workflow-card">
-          <div class="card-top">
-            <div>
-              <div class="card-kicker">Lifecycle progression</div>
-              <h2 class="card-title">Workflow timeline</h2>
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Selected connector</div>
+                <h2 class="card-title">Config and contract</h2>
+              </div>
             </div>
-          </div>
-          <div class="timeline-list" id="timelineList"></div>
-        </div>
+            <div class="connector-focus" id="adminConnectorSummary"></div>
+          </section>
 
-        <div class="workflow-card">
-          <div class="card-top">
-            <div>
-              <div class="card-kicker">Run posture</div>
-              <h2 class="card-title">Operator summary</h2>
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Runtime mode</div>
+                <h2 class="card-title">Proxy vs vendor MCP</h2>
+              </div>
             </div>
-          </div>
-          <div class="summary-list">
-            <div class="summary-row">
-              <span>Execution mode</span>
-              <strong>Autonomous with gates</strong>
+            <div class="mode-list" id="runtimeModeSelector"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">MCP fabric</div>
+                <h2 class="card-title">Namespace and server bindings</h2>
+              </div>
             </div>
-            <div class="summary-row">
-              <span>Context state</span>
-              <strong>Resolved from connectors</strong>
+            <div class="focus-list" id="mcpFabricList"></div>
+          </section>
+
+          <section class="workflow-card admin-span-2">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Tool mapping inspector</div>
+                <h2 class="card-title">Stable contract to implementation map</h2>
+              </div>
             </div>
-            <div class="summary-row">
-              <span>Writeback</span>
-              <strong>Policy-checked before send</strong>
+            <div class="mapping-list" id="toolMappingList"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Environment and secrets</div>
+                <h2 class="card-title">Binding scopes</h2>
+              </div>
             </div>
-            <div class="summary-row">
-              <span>Best next move</span>
-              <strong id="nextActionValue">Review active stage details</strong>
+            <div class="binding-list" id="adminEnvBindings"></div>
+          </section>
+
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Writeback policy</div>
+                <h2 class="card-title">Allowed mutations</h2>
+              </div>
             </div>
-          </div>
+            <div class="policy-list" id="writebackPolicyList"></div>
+          </section>
+
+          <section class="workflow-card admin-span-2">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Implementation contract</div>
+                <h2 class="card-title">Spec and source-of-truth files</h2>
+              </div>
+            </div>
+            <div class="binding-list" id="adminSpecList"></div>
+          </section>
         </div>
       </section>
 
-      <section class="message-stream" id="messageStream"></section>
+      <section class="workspace-panel" id="observabilityPanel" hidden>
+        <div class="control-grid">
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Live runs</div>
+                <h2 class="card-title">Execution board</h2>
+              </div>
+            </div>
+            <div class="run-board" id="runBoard"></div>
+          </section>
 
-      <section class="suggestion-strip">
-        <button class="suggestion-card">Connect a new source adapter</button>
-        <button class="suggestion-card">Switch lifecycle profile to story</button>
-        <button class="suggestion-card">Open context provider diagnostics</button>
-      </section>
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Decision trace</div>
+                <h2 class="card-title">Why this playbook was selected</h2>
+              </div>
+            </div>
+            <div class="trace-list" id="decisionTrace"></div>
+          </section>
 
-      <section class="composer-shell">
-        <div class="composer-toolbar">
-          <span class="toolbar-chip">Normalized work item</span>
-          <span class="toolbar-chip">Context assembly</span>
-          <span class="toolbar-chip">Source sync guarded</span>
+          <section class="workflow-card">
+            <div class="card-top">
+              <div>
+                <div class="card-kicker">Failure analysis</div>
+                <h2 class="card-title">Error hotspots and retries</h2>
+              </div>
+            </div>
+            <div class="heatmap-list" id="failureHeatmap"></div>
+          </section>
         </div>
-        <label class="composer">
-          <textarea id="composerInput" rows="4">Take the requirement, normalize it, inspect similar work, docs, tests, and ownership, then recommend the best delivery path before execution.</textarea>
-          <div class="composer-footer">
-            <div class="composer-hints">
-              <span>Profile-aware</span>
-              <span>MCP-backed</span>
-              <span>Enterprise audit trail</span>
-            </div>
-            <div class="composer-actions">
-              <button class="ghost-button" id="attachContextButton">Attach Context</button>
-              <button class="accent-button" id="sendButton">Send to Pipeline</button>
-            </div>
-          </div>
-        </label>
       </section>
     </main>
 
@@ -226,6 +443,17 @@
           </div>
 
           <div class="policy-list" id="policyList"></div>
+        </section>
+
+        <section class="config-card">
+          <div class="card-top">
+            <div>
+              <div class="card-kicker">Secrets and tokens</div>
+              <h2 class="card-title">Connection scopes</h2>
+            </div>
+          </div>
+
+          <div class="policy-list" id="secretBindings"></div>
         </section>
       </div>
     </aside>

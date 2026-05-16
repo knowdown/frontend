@@ -902,6 +902,11 @@ body {
   color: var(--mint);
 }
 
+.connector-status.pending {
+  background: rgba(255, 191, 105, 0.12);
+  color: var(--amber);
+}
+
 .connector-status.staged {
   background: rgba(255, 191, 105, 0.12);
   color: var(--amber);
@@ -1034,10 +1039,194 @@ body {
   padding-bottom: 0;
 }
 
+.policy-subtext,
+.playbook-detail,
+.route-meta,
+.run-meta,
+.playbook-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .policy-value {
   color: var(--text);
   font-family: var(--font-mono);
   text-align: right;
+}
+
+.workspace-switcher {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.workspace-tab {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.workspace-tab.active {
+  color: var(--text);
+  border-color: rgba(97, 243, 222, 0.2);
+  background: rgba(97, 243, 222, 0.11);
+}
+
+.workspace-panel[hidden] {
+  display: none;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-grid {
+  align-items: start;
+}
+
+.admin-span-2 {
+  grid-column: span 2;
+}
+
+.playbook-list,
+.route-list,
+.binding-list,
+.chain-list,
+.run-board,
+.trace-list,
+.heatmap-list,
+.mode-list,
+.mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.playbook-row,
+.route-row,
+.binding-row,
+.chain-row,
+.run-card,
+.heatmap-row,
+.secret-row {
+  border-radius: 18px;
+  border: 1px solid rgba(152, 181, 214, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 14px;
+}
+
+button.playbook-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+}
+
+.active-card {
+  background: linear-gradient(135deg, rgba(97, 243, 222, 0.08), rgba(94, 183, 255, 0.08));
+  border-color: rgba(97, 243, 222, 0.18);
+}
+
+.mode-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  border-radius: 18px;
+  border: 1px solid rgba(152, 181, 214, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 14px;
+}
+
+.mapping-row {
+  border-radius: 18px;
+  border: 1px solid rgba(152, 181, 214, 0.1);
+  background:
+    linear-gradient(180deg, rgba(97, 243, 222, 0.035), transparent 32%),
+    rgba(255, 255, 255, 0.025);
+  padding: 16px;
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mapping-block {
+  min-width: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(152, 181, 214, 0.08);
+  background: rgba(4, 12, 21, 0.52);
+  padding: 12px;
+}
+
+.playbook-title-row,
+.run-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.playbook-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.playbook-chip-row,
+.chain-nodes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.chain-nodes {
+  align-items: center;
+}
+
+.chain-node,
+.chain-arrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.chain-node {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(97, 243, 222, 0.08);
+  border: 1px solid rgba(97, 243, 222, 0.16);
+}
+
+.chain-arrow {
+  color: var(--text-dim);
+}
+
+.route-main {
+  margin-bottom: 6px;
+}
+
+.run-meta,
+.playbook-detail {
+  margin-top: 10px;
+}
+
+.secret-row .policy-row {
+  padding-bottom: 8px;
 }
 
 @media (max-width: 1200px) {
@@ -1051,6 +1240,18 @@ body {
   }
 
   .workflow-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-span-2 {
+    grid-column: span 1;
+  }
+
+  .mapping-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1129,7 +1330,9 @@ body {
 
   .workspace-header,
   .composer-footer,
-  .focus-stats {
+  .focus-stats,
+  .playbook-title-row,
+  .run-top {
     flex-direction: column;
     align-items: stretch;
   }
