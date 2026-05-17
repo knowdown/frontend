@@ -262,42 +262,50 @@
           <p id="adminBannerCopy">Changes here persist in this browser so teams can model connector setup now. Backend persistence and GitHub-backed config updates can layer onto the same contract later.</p>
         </section>
 
-        <div class="admin-layout">
-          <section class="plain-panel">
+        <div class="admin-shell">
+          <aside class="plain-panel admin-catalog-panel">
             <h2>Connector catalog</h2>
+            <p class="setup-panel-copy">Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.</p>
             <div class="admin-connector-list" id="adminConnectorCatalog"></div>
-          </section>
-          <section class="plain-panel">
-            <h2>Selected connector</h2>
-            <div class="summary-list" id="adminSummary"></div>
-          </section>
-          <section class="plain-panel span-2">
-            <h2>Connector basics</h2>
-            <div id="adminBasicsPanel"></div>
-          </section>
-          <section class="plain-panel span-2">
-            <h2>Runtime and MCP fabric</h2>
-            <div id="adminRuntimePanel"></div>
-          </section>
-          <section class="plain-panel span-2">
-            <h2>Tool mappings</h2>
-            <div id="adminToolMappings"></div>
-          </section>
-          <section class="plain-panel">
-            <h2>Env and secrets</h2>
-            <div id="adminBindings"></div>
-          </section>
-          <section class="plain-panel">
-            <h2>Writeback policy</h2>
-            <div id="adminPolicy"></div>
-          </section>
-          <section class="plain-panel span-2">
-            <h2>GitHub persistence</h2>
-            <div id="adminPersistencePanel"></div>
-          </section>
-          <section class="plain-panel span-2">
-            <h2>Config preview</h2>
-            <pre class="config-preview" id="adminConfigPreview"></pre>
+          </aside>
+
+          <section class="admin-detail-stage">
+            <section class="plain-panel admin-selected-panel">
+              <h2>Selected connector</h2>
+              <div id="adminSelectedHeader"></div>
+              <div class="summary-list" id="adminSummary"></div>
+            </section>
+
+            <div class="admin-layout">
+              <section class="plain-panel span-2">
+                <h2>Connector basics</h2>
+                <div id="adminBasicsPanel"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>Runtime and MCP fabric</h2>
+                <div id="adminRuntimePanel"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>Tool mappings</h2>
+                <div id="adminToolMappings"></div>
+              </section>
+              <section class="plain-panel">
+                <h2>Env and secrets</h2>
+                <div id="adminBindings"></div>
+              </section>
+              <section class="plain-panel">
+                <h2>Writeback policy</h2>
+                <div id="adminPolicy"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>GitHub persistence</h2>
+                <div id="adminPersistencePanel"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>Config preview</h2>
+                <pre class="config-preview" id="adminConfigPreview"></pre>
+              </section>
+            </div>
           </section>
         </div>
       </section>

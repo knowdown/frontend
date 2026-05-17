@@ -757,6 +757,55 @@ button {
   gap: 14px;
 }
 
+.admin-shell {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.admin-catalog-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.admin-detail-stage {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-selected-panel {
+  border-color: #d2e3fc;
+  background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+}
+
+.admin-selected-header {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-selected-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.admin-selected-title-row h3 {
+  margin: 4px 0 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.admin-selected-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .admin-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1147,6 +1196,7 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-shell,
   .setup-guide-grid,
   .input-grid,
   .source-catalog,
@@ -1205,6 +1255,7 @@ button {
   }
 
   .template-grid,
+  .admin-shell,
   .setup-stage-strip,
   .source-catalog,
   .setup-config-grid,
@@ -1222,6 +1273,10 @@ button {
 
   .span-2 {
     grid-column: span 1;
+  }
+
+  .admin-catalog-panel {
+    position: static;
   }
 
   .run-header,

@@ -1302,6 +1302,27 @@ function renderAdmin() {
     </div>
   ` : "";
 
+  $("adminSelectedHeader").innerHTML = profile ? `
+    <div class="admin-selected-header">
+      <div class="admin-selected-title-row">
+        <div>
+          <div class="workspace-kicker">${escapeHtml(isEditMode ? "Editing connector" : "Viewing connector")}</div>
+          <h3>${escapeHtml(profile.name || profile.id || "Connector profile")}</h3>
+        </div>
+        <span class="status-dot ${statusClass(profile.status)}">${escapeHtml(profile.status || "STAGED")}</span>
+      </div>
+      <p>${escapeHtml(profile.summary || "Connector profile selected from the catalog.")}</p>
+      <div class="meta-tag-row">
+        <span>${escapeHtml(profile.category || "Connector")}</span>
+        <span>${escapeHtml(mode?.label || "No runtime mode")}</span>
+        <span>${escapeHtml(`${configuredBindingCount(profile)} configured values`)}</span>
+        <span>${escapeHtml(profile.connectorFile || "No connector file")}</span>
+      </div>
+    </div>
+  ` : `
+    <div class="empty-state">Select a connector from the catalog to review or edit its configuration.</div>
+  `;
+
   $("adminBasicsPanel").innerHTML = profile ? (isEditMode ? `
     <div class="admin-form-grid">
       <div class="admin-form-field">

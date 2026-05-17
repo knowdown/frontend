@@ -148,6 +148,7 @@ const createById = (id, tagName = "div") => {
   "adminEditModeButton",
   "adminEditActions",
   "adminBannerCopy",
+  "adminSelectedHeader",
   "adminConnectorCatalog",
   "adminSummary",
   "adminBasicsPanel",
@@ -340,6 +341,7 @@ elements.get("sourceSelect").value = "playwright";
 elements.get("sourceSelect").dispatchEvent({ type: "change", target: elements.get("sourceSelect") });
 elements.get("createSetupConfigButton").click();
 assert(elements.get("adminPanel").hidden === false, "Creating a setup config should open Admin");
+assert(elements.get("adminSelectedHeader").innerHTML.includes("Playwright"), "Selected connector workspace should show the active connector");
 assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin should open on the newly created source config");
 assert(elements.get("adminEditModeButton").className.includes("active"), "Setup-driven admin opening should land in edit mode");
 assert(elements.get("adminEditActions").hidden === false, "Edit actions should be visible in edit mode");
