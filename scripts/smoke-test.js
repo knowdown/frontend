@@ -154,6 +154,7 @@ const createById = (id, tagName = "div") => {
   "adminCatalogPanel",
   "adminConnectorSearch",
   "adminConnectorSearchMeta",
+  "adminConnectorFilters",
   "adminDetailStage",
   "backToConnectorCatalogButton",
   "cancelConnectorChangesButton",
@@ -339,6 +340,7 @@ assert(elements.get("adminCatalogPanel").hidden === false, "Admin should open on
 assert(elements.get("adminDetailStage").hidden === true, "Connector detail workspace should stay hidden until a connector is selected");
 assert(elements.get("adminConnectorCatalog").innerHTML.includes("ServiceNow"), "Catalog should render connector cards");
 assert(elements.get("adminConnectorSearchMeta").innerHTML.includes("shown"), "Catalog should show search result counts");
+assert(Boolean(elements.get("adminConnectorFilters")), "Catalog should include the connector filter container");
 elements.get("adminConnectorSearch").value = "github";
 elements.get("adminConnectorSearch").dispatchEvent({ type: "input", target: elements.get("adminConnectorSearch") });
 assert(elements.get("adminConnectorCatalog").innerHTML.includes("GitHub"), "Catalog search should filter connectors");

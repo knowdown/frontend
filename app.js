@@ -41,6 +41,7 @@ let searchTerm = "";
 let adminMode = "view";
 let adminStage = "catalog";
 let adminCatalogSearchTerm = "";
+let adminCatalogFilter = "all";
 let adminCreatedProfileIds = new Set();
 let connectorProfilesState = hydrateConnectorProfiles(baseConnectorProfiles, loadAdminOverrides());
 let githubPersistenceState = hydrateGithubPersistence(loadGithubPersistence());
@@ -304,6 +305,17 @@ function matchesAdminCatalog(values) {
   const haystack = values.filter(Boolean).join(" ").toLowerCase();
   if (searchTerm && !haystack.includes(searchTerm)) return false;
   if (adminCatalogSearchTerm && !haystack.includes(adminCatalogSearchTerm)) return false;
+  return true;
+}
+
+function matchesAdminFilter(profile) {
+  if (adminCatalogFilter === "all") return true;
+  const tags = profile.tags || [];
+  const runtimeIds = (profile.runtimeModes || []).map((mode) => mode.id);
+  if (adminCatalogFilter === "ootb") return tags.includes("ootb");
+  if (adminCatalogFilter === "draft") return profile.status === "STAGED" || profile.status === "DRAFT" || tags.includes("draft");
+  if (adminCatalogFilter === "proxy_mcp") return runtimeIds.includes("proxy_mcp");
+  if (adminCatalogFilter === "vendor_mcp") return runtimeIds.includes("vendor_mcp");
   return true;
 }
 
@@ -1312,6 +1324,7 @@ function renderAdmin() {
       : "Choose a connector from the catalog or create a new one to open its dedicated detail workspace.";
 
   const visibleCatalogProfiles = connectorProfilesState
+    .filter((item) => matchesAdminFilter(item))
     .filter((item) => matchesAdminCatalog([
       item.name,
       item.summary,
@@ -1321,6 +1334,9 @@ function renderAdmin() {
     ]));
 
   $("adminConnectorSearch").value = adminCatalogSearchTerm;
+  Array.from($("adminConnectorFilters").querySelectorAll?.("[data-admin-filter]") || []).forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminFilter === adminCatalogFilter);
+  });
   $("adminConnectorSearchMeta").innerHTML = [
     `${visibleCatalogProfiles.length} shown`,
     `${connectorProfilesState.length} total`,
@@ -1737,6 +1753,13 @@ function bindAdminPanelEvents() {
   $("adminConnectorSearch")?.addEventListener("input", (event) => {
     adminCatalogSearchTerm = event.target.value.trim().toLowerCase();
     renderAll();
+  });
+
+  Array.from($("adminConnectorFilters").querySelectorAll?.("[data-admin-filter]") || []).forEach((button) => {
+    button.addEventListener("click", () => {
+      adminCatalogFilter = button.dataset.adminFilter || "all";
+      renderAll();
+    });
   });
 
   $("adminViewModeButton")?.addEventListener("click", () => {

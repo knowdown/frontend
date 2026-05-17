@@ -803,6 +803,13 @@ button {
   justify-content: flex-end;
 }
 
+.admin-catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 .admin-detail-stage {
   display: grid;
   gap: 14px;
