@@ -777,6 +777,12 @@ button {
   top: 16px;
 }
 
+.admin-shell.catalog-only .admin-catalog-panel {
+  position: static;
+  width: 100%;
+  max-width: none;
+}
+
 .admin-catalog-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1019,7 +1025,7 @@ button {
 
 .admin-shell.catalog-only .admin-connector-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -1028,6 +1034,12 @@ button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+@media (max-width: 1440px) {
+  .admin-shell.catalog-only .admin-connector-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .admin-card-top,
@@ -1279,6 +1291,10 @@ button {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
+
+  .admin-shell.catalog-only .admin-connector-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 820px) {
@@ -1346,6 +1362,10 @@ button {
 
   .admin-catalog-panel {
     position: static;
+  }
+
+  .admin-shell.catalog-only .admin-connector-list {
+    grid-template-columns: 1fr;
   }
 
   .run-header,
