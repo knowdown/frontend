@@ -243,17 +243,23 @@
             <h1>Connector control plane</h1>
             <div class="workspace-meta" id="adminMeta"></div>
           </div>
-          <div class="run-actions">
+          <div class="run-actions admin-toolbar">
+            <div class="admin-mode-switch" id="adminModeSwitch">
+              <button class="ghost-button" id="adminViewModeButton" type="button">Read only</button>
+              <button class="ghost-button" id="adminEditModeButton" type="button">Edit mode</button>
+            </div>
+            <div class="run-actions" id="adminEditActions">
             <button class="ghost-button" id="createConnectorProfileButton" type="button">Create config</button>
             <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">Duplicate selected</button>
             <button class="ghost-button" id="resetConnectorButton" type="button">Reset connector</button>
             <button class="ghost-button" id="resetAllAdminButton" type="button">Reset all local overrides</button>
+            </div>
           </div>
         </section>
 
         <section class="admin-banner">
           <strong>Local admin preview</strong>
-          <p>Changes here persist in this browser so teams can model connector setup now. Backend persistence and GitHub-backed config updates can layer onto the same contract later.</p>
+          <p id="adminBannerCopy">Changes here persist in this browser so teams can model connector setup now. Backend persistence and GitHub-backed config updates can layer onto the same contract later.</p>
         </section>
 
         <div class="admin-layout">

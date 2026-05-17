@@ -38,6 +38,7 @@ let activeFlowId = workTypes[0]?.id || "";
 let activeSourceId = connectors[0]?.id || "";
 let activeFilter = "all";
 let searchTerm = "";
+let adminMode = "view";
 let connectorProfilesState = hydrateConnectorProfiles(baseConnectorProfiles, loadAdminOverrides());
 let githubPersistenceState = hydrateGithubPersistence(loadGithubPersistence());
 let persistenceStatus = {
@@ -306,10 +307,27 @@ function connectorProfile(id) {
   return connectorProfilesState.find((item) => item.id === id) || null;
 }
 
+function setAdminMode(mode) {
+  adminMode = mode === "edit" ? "edit" : "view";
+}
+
 function summarizeMappingPreview(mappings = [], limit = 3) {
   return mappings
     .slice(0, limit)
     .map((mapping) => `${mapping.stableTool} -> ${mapping.vendorTool || mapping.bindingId || "pending"}`);
+}
+
+function formatListValue(list) {
+  return Array.isArray(list) && list.length ? list.join(", ") : "None";
+}
+
+function renderGuideRows(rows) {
+  return rows.map(([label, value]) => `
+    <div class="guide-row">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `).join("");
 }
 
 function activeRun() {
@@ -1227,6 +1245,14 @@ function renderAdmin() {
   const envBindings = currentEnvBindings(profile);
   const secretBindings = currentSecretBindings(profile);
   const secretNotes = currentSecretNotes(profile);
+  const isEditMode = adminMode === "edit";
+
+  $("adminViewModeButton").classList.toggle("active", !isEditMode);
+  $("adminEditModeButton").classList.toggle("active", isEditMode);
+  $("adminEditActions").hidden = !isEditMode;
+  $("adminBannerCopy").textContent = isEditMode
+    ? "Edit mode is active. Update connector details, bindings, and persistence targets here, then save when you are ready."
+    : "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode.";
 
   $("adminMeta").innerHTML = [
     profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
@@ -1276,7 +1302,7 @@ function renderAdmin() {
     </div>
   ` : "";
 
-  $("adminBasicsPanel").innerHTML = profile ? `
+  $("adminBasicsPanel").innerHTML = profile ? (isEditMode ? `
     <div class="admin-form-grid">
       <div class="admin-form-field">
         <label for="adminProfileName">Display name</label>
@@ -1314,9 +1340,19 @@ function renderAdmin() {
     <div class="persistence-callout">
       Use <strong>Create config</strong> to start from the enterprise template, or <strong>Duplicate selected</strong> to fork the current connector into a new editable config.
     </div>
-  ` : "";
+  ` : `
+    ${renderGuideRows([
+      ["Display name", profile.name || "Unnamed connector"],
+      ["Status", profile.status || "Unknown"],
+      ["Config id", profile.id || "Not set"],
+      ["Category", profile.category || "Connector"],
+      ["Connector file", profile.connectorFile || "Not set"],
+      ["Source config file", profile.sourceConfig || "Not set"],
+      ["Summary", profile.summary || "No summary yet"],
+    ])}
+  `) : "";
 
-  $("adminRuntimePanel").innerHTML = profile ? `
+  $("adminRuntimePanel").innerHTML = profile ? (isEditMode ? `
     <div class="admin-form-grid">
       <div class="admin-form-field">
         <label for="adminRuntimeMode">Runtime mode</label>
@@ -1362,7 +1398,20 @@ function renderAdmin() {
     <div class="admin-tag-row">
       ${(mode?.notes || []).map((note) => `<span>${escapeHtml(note)}</span>`).join("")}
     </div>
-  ` : "";
+  ` : `
+    ${renderGuideRows([
+      ["Runtime mode", mode?.label || "Not configured"],
+      ["Required MCP servers", formatListValue(mode?.requiredServerNames || [])],
+      ["Namespace", profile.mcpFabric?.namespace || "Not set"],
+      ["Server name", profile.mcpFabric?.serverName || "Not set"],
+      ["Source read path", profile.mcpFabric?.sourceReadPath || "Not set"],
+      ["Source write path", profile.mcpFabric?.sourceWritePath || "Not set"],
+      ["Mode meaning", mode?.description || "No runtime mode description configured"],
+    ])}
+    <div class="admin-tag-row">
+      ${(mode?.notes || []).map((note) => `<span>${escapeHtml(note)}</span>`).join("")}
+    </div>
+  `) : "";
 
   $("adminToolMappings").innerHTML = profile ? `
     <div class="tool-mapping-list">
@@ -1375,20 +1424,26 @@ function renderAdmin() {
             </div>
             <span class="status-dot ${statusClass(mode?.kind === "replacement" ? "live" : "waiting")}">${escapeHtml(mode?.kind === "replacement" ? "vendor" : "proxy")}</span>
           </div>
-          <div class="tool-mapping-grid">
-            <div class="admin-form-field">
-              <label>Binding id</label>
-              <input type="text" value="${escapeHtml(mapping.bindingId || "")}" data-admin-tool-index="${index}" data-admin-tool-field="bindingId">
+          ${isEditMode ? `
+            <div class="tool-mapping-grid">
+              <div class="admin-form-field">
+                <label>Binding id</label>
+                <input type="text" value="${escapeHtml(mapping.bindingId || "")}" data-admin-tool-index="${index}" data-admin-tool-field="bindingId">
+              </div>
+              <div class="admin-form-field">
+                <label>Strategy</label>
+                <input type="text" value="${escapeHtml(mapping.strategy || "")}" data-admin-tool-index="${index}" data-admin-tool-field="strategy">
+              </div>
+              <div class="admin-form-field span-2">
+                <label>Vendor implementation</label>
+                <input type="text" value="${escapeHtml(mapping.vendorTool || "")}" data-admin-tool-index="${index}" data-admin-tool-field="vendorTool" placeholder="mcp__vendor__tool_name">
+              </div>
             </div>
-            <div class="admin-form-field">
-              <label>Strategy</label>
-              <input type="text" value="${escapeHtml(mapping.strategy || "")}" data-admin-tool-index="${index}" data-admin-tool-field="strategy">
-            </div>
-            <div class="admin-form-field span-2">
-              <label>Vendor implementation</label>
-              <input type="text" value="${escapeHtml(mapping.vendorTool || "")}" data-admin-tool-index="${index}" data-admin-tool-field="vendorTool" placeholder="mcp__vendor__tool_name">
-            </div>
-          </div>
+          ` : renderGuideRows([
+            ["Binding id", mapping.bindingId || "Not set"],
+            ["Strategy", mapping.strategy || "Not set"],
+            ["Vendor implementation", mapping.vendorTool || "Not set"],
+          ])}
           <div class="tool-meta">
             Request: ${escapeHtml(mapping.requestContract || "n/a")}<br>
             Response: ${escapeHtml(mapping.responseContract || "n/a")}
@@ -1409,12 +1464,17 @@ function renderAdmin() {
             </div>
             <span class="status-dot ${String(binding.value || "").trim() ? "live" : "staged"}">${String(binding.value || "").trim() ? "set" : "empty"}</span>
           </div>
-          <div class="binding-input-grid">
-            <div class="admin-form-field span-2">
-              <label>Value</label>
-              <input class="binding-input" type="text" value="${escapeHtml(binding.value || "")}" data-admin-binding-collection="envBindings" data-admin-binding-index="${index}">
+          ${isEditMode ? `
+            <div class="binding-input-grid">
+              <div class="admin-form-field span-2">
+                <label>Value</label>
+                <input class="binding-input" type="text" value="${escapeHtml(binding.value || "")}" data-admin-binding-collection="envBindings" data-admin-binding-index="${index}">
+              </div>
             </div>
-          </div>
+          ` : renderGuideRows([
+            ["Value state", String(binding.value || "").trim() ? "Set locally" : "Not set"],
+            ["Current value", String(binding.value || "").trim() ? binding.value : "Not set"],
+          ])}
         </div>
       `).join("")}
       ${secretBindings.map((binding, index) => `
@@ -1426,12 +1486,17 @@ function renderAdmin() {
             </div>
             <span class="status-dot ${String(binding.value || "").trim() ? "live" : "staged"}">${String(binding.value || "").trim() ? "set" : "empty"}</span>
           </div>
-          <div class="binding-input-grid">
-            <div class="admin-form-field span-2">
-              <label>Secret reference or value</label>
-              <input class="binding-input" type="password" value="${escapeHtml(binding.value || "")}" data-admin-binding-collection="envBindings" data-admin-binding-index="${index}" data-admin-binding-kind="secret">
+          ${isEditMode ? `
+            <div class="binding-input-grid">
+              <div class="admin-form-field span-2">
+                <label>Secret reference or value</label>
+                <input class="binding-input" type="password" value="${escapeHtml(binding.value || "")}" data-admin-binding-collection="envBindings" data-admin-binding-index="${index}" data-admin-binding-kind="secret">
+              </div>
             </div>
-          </div>
+          ` : renderGuideRows([
+            ["Value state", String(binding.value || "").trim() ? "Stored locally" : "Not set"],
+            ["Secret visibility", String(binding.value || "").trim() ? "Masked in read-only mode" : "No local value saved"],
+          ])}
         </div>
       `).join("")}
       ${secretNotes.length ? `
@@ -1442,7 +1507,7 @@ function renderAdmin() {
     </div>
   ` : "";
 
-  $("adminPolicy").innerHTML = profile ? `
+  $("adminPolicy").innerHTML = profile ? (isEditMode ? `
     <div class="policy-list">
       <div class="policy-card">
         <div class="policy-card-top">
@@ -1477,7 +1542,16 @@ function renderAdmin() {
         </div>
       </div>
     </div>
-  ` : "";
+  ` : `
+    ${renderGuideRows([
+      ["Allow comments", profile.writePolicy?.allowComments ? "Allowed" : "Blocked"],
+      ["Allow labels", profile.writePolicy?.allowLabels ? "Allowed" : "Blocked"],
+      ["Allow attachments", profile.writePolicy?.allowAttachments ? "Allowed" : "Blocked"],
+      ["Allowed field updates", formatListValue(profile.writePolicy?.allowFieldUpdates || [])],
+      ["Denied field updates", formatListValue(profile.writePolicy?.denyFieldUpdates || [])],
+      ["Approval posture", profile.writePolicy?.approvalPosture || "Not set"],
+    ])}
+  `) : "";
 
   $("adminConfigPreview").textContent = profile ? JSON.stringify({
     id: profile.id,
@@ -1493,7 +1567,7 @@ function renderAdmin() {
     writePolicy: profile.writePolicy,
   }, null, 2) : "";
 
-  $("adminPersistencePanel").innerHTML = profile ? `
+  $("adminPersistencePanel").innerHTML = profile ? (isEditMode ? `
     <div class="admin-form-grid">
       <div class="admin-form-field">
         <label for="persistApiBase">GitHub API</label>
@@ -1539,12 +1613,39 @@ function renderAdmin() {
       <strong>${escapeHtml(persistenceStatus.message)}</strong>
       ${persistenceStatus.details?.length ? `<div class="persistence-status-list">${persistenceStatus.details.map((detail) => `<div>${escapeHtml(detail)}</div>`).join("")}</div>` : ""}
     </div>
-  ` : "";
+  ` : `
+    ${renderGuideRows([
+      ["GitHub API", githubPersistenceState.apiBase || "https://api.github.com"],
+      ["Owner", githubPersistenceState.owner || "Not set"],
+      ["Repo", githubPersistenceState.repo || "Not set"],
+      ["Branch", githubPersistenceState.branch || "main"],
+      ["Environment", githubPersistenceState.environment || "Repository-level settings"],
+      ["Commit message prefix", githubPersistenceState.commitMessagePrefix || "Not set"],
+      ["Token state", githubPersistenceState.token ? "Token saved locally for this browser session" : "No token entered"],
+    ])}
+    <div class="persistence-callout">
+      Switch to <strong>Edit mode</strong> to change GitHub persistence settings or save connector config, variables, and secrets.
+    </div>
+    <div class="persist-status ${escapeHtml(persistenceStatus.tone)}">
+      <strong>${escapeHtml(persistenceStatus.message)}</strong>
+      ${persistenceStatus.details?.length ? `<div class="persistence-status-list">${persistenceStatus.details.map((detail) => `<div>${escapeHtml(detail)}</div>`).join("")}</div>` : ""}
+    </div>
+  `) : "";
 
   bindAdminPanelEvents();
 }
 
 function bindAdminPanelEvents() {
+  $("adminViewModeButton")?.addEventListener("click", () => {
+    setAdminMode("view");
+    renderAll();
+  });
+
+  $("adminEditModeButton")?.addEventListener("click", () => {
+    setAdminMode("edit");
+    renderAll();
+  });
+
   Array.from($("adminConnectorCatalog").querySelectorAll?.("[data-admin-select-connector]") || []).forEach((button) => {
     button.addEventListener("click", () => {
       activeSourceId = button.dataset.adminSelectConnector;
@@ -1856,12 +1957,14 @@ $("resetConnectorButton").addEventListener("click", () => {
 });
 
 $("createConnectorProfileButton").addEventListener("click", () => {
+  setAdminMode("edit");
   createConnectorProfileFromTemplate("enterprise-template");
   setView("admin");
   renderAll();
 });
 
 $("duplicateConnectorProfileButton").addEventListener("click", () => {
+  setAdminMode("edit");
   createConnectorProfileFromTemplate(activeSourceId, {
     name: `Copy of ${activeAdminProfile()?.name || "Connector"}`,
   });
@@ -1878,11 +1981,13 @@ $("openSetupAdminButton").addEventListener("click", () => {
   if (!connectorProfile(activeSourceId)) {
     createConnectorProfileForSource(activeSource());
   }
+  setAdminMode("edit");
   setView("admin");
   renderAll();
 });
 
 $("createSetupConfigButton").addEventListener("click", () => {
+  setAdminMode("edit");
   createConnectorProfileForSource(activeSource());
   setView("admin");
   renderAll();
@@ -1891,10 +1996,16 @@ $("createSetupConfigButton").addEventListener("click", () => {
 $("setupShortcut").addEventListener("click", () => setView("setup"));
 $("runsShortcut").addEventListener("click", () => setView("runs"));
 $("monitorShortcut").addEventListener("click", () => setView("monitor"));
-$("adminShortcut").addEventListener("click", () => setView("admin"));
+$("adminShortcut").addEventListener("click", () => {
+  setAdminMode("view");
+  setView("admin");
+});
 
 navButtons.forEach((button) => {
-  button.addEventListener("click", () => setView(button.dataset.view));
+  button.addEventListener("click", () => {
+    if (button.dataset.view === "admin") setAdminMode("view");
+    setView(button.dataset.view);
+  });
 });
 
 filterChips.forEach((chip) => {

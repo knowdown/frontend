@@ -534,6 +534,32 @@ button {
   line-height: 1.6;
 }
 
+.admin-toolbar {
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-subtle);
+}
+
+.admin-mode-switch .ghost-button {
+  min-height: 34px;
+}
+
+.admin-mode-switch .ghost-button.active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: white;
+}
+
 .template-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
