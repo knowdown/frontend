@@ -146,8 +146,15 @@ const createById = (id, tagName = "div") => {
   "adminModeSwitch",
   "adminViewModeButton",
   "adminEditModeButton",
+  "adminCatalogActions",
+  "adminDetailActions",
   "adminEditActions",
   "adminBannerCopy",
+  "adminShell",
+  "adminCatalogPanel",
+  "adminDetailStage",
+  "backToConnectorCatalogButton",
+  "cancelConnectorChangesButton",
   "adminSelectedHeader",
   "adminConnectorCatalog",
   "adminSummary",
@@ -322,6 +329,11 @@ elements.get("monitorShortcut").click();
 assert(elements.get("monitorPanel").hidden === false, "Monitor view should open");
 assert(elements.get("runBoard").innerHTML.includes("kd-run"), "Monitor runs should render");
 
+elements.get("adminShortcut").click();
+assert(elements.get("adminPanel").hidden === false, "Admin view should open from shortcut");
+assert(elements.get("adminCatalogPanel").hidden === false, "Admin should open on the connector catalog");
+assert(elements.get("adminDetailStage").hidden === true, "Connector detail workspace should stay hidden until a connector is selected");
+
 globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
 assert(elements.get("runBoard").innerHTML.includes("kd-run") || elements.get("historyList").children.length >= 1, "Search should preserve matching content");
@@ -341,6 +353,8 @@ elements.get("sourceSelect").value = "playwright";
 elements.get("sourceSelect").dispatchEvent({ type: "change", target: elements.get("sourceSelect") });
 elements.get("createSetupConfigButton").click();
 assert(elements.get("adminPanel").hidden === false, "Creating a setup config should open Admin");
+assert(elements.get("adminCatalogPanel").hidden === true, "Catalog should hide while a selected connector is open");
+assert(elements.get("adminDetailStage").hidden === false, "Detail workspace should open for the selected connector");
 assert(elements.get("adminSelectedHeader").innerHTML.includes("Playwright"), "Selected connector workspace should show the active connector");
 assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin should open on the newly created source config");
 assert(elements.get("adminEditModeButton").className.includes("active"), "Setup-driven admin opening should land in edit mode");
@@ -351,5 +365,9 @@ elements.get("adminViewModeButton").click();
 assert(elements.get("adminViewModeButton").className.includes("active"), "Admin should switch back to read-only mode");
 assert(elements.get("adminEditActions").hidden === true, "Edit actions should hide in read-only mode");
 assert(elements.get("adminPersistencePanel").innerHTML.includes("Switch to"), "Read-only mode should explain how to edit persistence settings");
+
+elements.get("backToConnectorCatalogButton").click();
+assert(elements.get("adminCatalogPanel").hidden === false, "Back should return to the connector catalog");
+assert(elements.get("adminDetailStage").hidden === true, "Back should hide the selected connector workspace");
 
 console.log("frontend smoke test passed");

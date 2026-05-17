@@ -39,6 +39,8 @@ let activeSourceId = connectors[0]?.id || "";
 let activeFilter = "all";
 let searchTerm = "";
 let adminMode = "view";
+let adminStage = "catalog";
+let adminCreatedProfileIds = new Set();
 let connectorProfilesState = hydrateConnectorProfiles(baseConnectorProfiles, loadAdminOverrides());
 let githubPersistenceState = hydrateGithubPersistence(loadGithubPersistence());
 let persistenceStatus = {
@@ -226,6 +228,7 @@ function createConnectorProfileFromTemplate(sourceProfileId = "enterprise-templa
   saveAdminOverrides();
   upsertConnectorDescriptorFromProfile(nextProfile);
   activeSourceId = nextProfile.id;
+  adminCreatedProfileIds.add(nextProfile.id);
   setPersistenceStatus("pending", `Created local connector config ${nextProfile.name}. Fill in the basics, runtime mappings, and bindings, then save to GitHub.`);
   return nextProfile;
 }
@@ -309,6 +312,41 @@ function connectorProfile(id) {
 
 function setAdminMode(mode) {
   adminMode = mode === "edit" ? "edit" : "view";
+}
+
+function setAdminStage(stage) {
+  adminStage = stage === "detail" ? "detail" : "catalog";
+}
+
+function openAdminCatalog() {
+  setAdminStage("catalog");
+  setAdminMode("view");
+}
+
+function openAdminDetail(options = {}) {
+  setAdminStage("detail");
+  if (options.mode) setAdminMode(options.mode);
+}
+
+function removeConnectorProfile(connectorId) {
+  connectorProfilesState = connectorProfilesState.filter((profile) => profile.id !== connectorId);
+  saveAdminOverrides();
+  const connectorIndex = connectors.findIndex((connector) => connector.id === connectorId);
+  if (connectorIndex >= 0) connectors.splice(connectorIndex, 1);
+  adminCreatedProfileIds.delete(connectorId);
+}
+
+function cancelConnectorChanges(connectorId = activeSourceId) {
+  if (!connectorId) return;
+  if (adminCreatedProfileIds.has(connectorId)) {
+    removeConnectorProfile(connectorId);
+  } else if (baseConnectorProfiles.some((profile) => profile.id === connectorId)) {
+    resetConnectorProfile(connectorId);
+    const updated = connectorProfile(connectorId);
+    if (updated) upsertConnectorDescriptorFromProfile(updated);
+  }
+  activeSourceId = connectorProfilesState[0]?.id || connectors[0]?.id || "";
+  setPersistenceStatus("pending", "Canceled connector changes and returned to the connector catalog.");
 }
 
 function summarizeMappingPreview(mappings = [], limit = 3) {
@@ -1246,13 +1284,24 @@ function renderAdmin() {
   const secretBindings = currentSecretBindings(profile);
   const secretNotes = currentSecretNotes(profile);
   const isEditMode = adminMode === "edit";
+  const isDetailStage = adminStage === "detail";
+
+  $("adminShell").classList.toggle("catalog-only", !isDetailStage);
+  $("adminShell").classList.toggle("detail-only", isDetailStage);
+  $("adminCatalogPanel").hidden = isDetailStage;
+  $("adminDetailStage").hidden = !isDetailStage;
+  $("adminCatalogActions").hidden = isDetailStage;
+  $("adminDetailActions").hidden = !isDetailStage;
+  $("adminModeSwitch").hidden = !isDetailStage;
 
   $("adminViewModeButton").classList.toggle("active", !isEditMode);
   $("adminEditModeButton").classList.toggle("active", isEditMode);
-  $("adminEditActions").hidden = !isEditMode;
+  $("adminEditActions").hidden = !isEditMode || !isDetailStage;
   $("adminBannerCopy").textContent = isEditMode
     ? "Edit mode is active. Update connector details, bindings, and persistence targets here, then save when you are ready."
-    : "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode.";
+    : isDetailStage
+      ? "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode."
+      : "Choose a connector from the catalog or create a new one to open its dedicated detail workspace.";
 
   $("adminMeta").innerHTML = [
     profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
@@ -1302,7 +1351,7 @@ function renderAdmin() {
     </div>
   ` : "";
 
-  $("adminSelectedHeader").innerHTML = profile ? `
+  $("adminSelectedHeader").innerHTML = isDetailStage && profile ? `
     <div class="admin-selected-header">
       <div class="admin-selected-title-row">
         <div>
@@ -1320,7 +1369,7 @@ function renderAdmin() {
       </div>
     </div>
   ` : `
-    <div class="empty-state">Select a connector from the catalog to review or edit its configuration.</div>
+    <div class="admin-empty-state">Select a connector from the catalog to review or edit its configuration.</div>
   `;
 
   $("adminBasicsPanel").innerHTML = profile ? (isEditMode ? `
@@ -1670,6 +1719,7 @@ function bindAdminPanelEvents() {
   Array.from($("adminConnectorCatalog").querySelectorAll?.("[data-admin-select-connector]") || []).forEach((button) => {
     button.addEventListener("click", () => {
       activeSourceId = button.dataset.adminSelectConnector;
+      openAdminDetail({ mode: "view" });
       renderAll();
     });
   });
@@ -1978,14 +2028,14 @@ $("resetConnectorButton").addEventListener("click", () => {
 });
 
 $("createConnectorProfileButton").addEventListener("click", () => {
-  setAdminMode("edit");
+  openAdminDetail({ mode: "edit" });
   createConnectorProfileFromTemplate("enterprise-template");
   setView("admin");
   renderAll();
 });
 
 $("duplicateConnectorProfileButton").addEventListener("click", () => {
-  setAdminMode("edit");
+  openAdminDetail({ mode: "edit" });
   createConnectorProfileFromTemplate(activeSourceId, {
     name: `Copy of ${activeAdminProfile()?.name || "Connector"}`,
   });
@@ -1995,6 +2045,7 @@ $("duplicateConnectorProfileButton").addEventListener("click", () => {
 
 $("resetAllAdminButton").addEventListener("click", () => {
   resetAllConnectorProfiles();
+  adminCreatedProfileIds = new Set();
   renderAll();
 });
 
@@ -2002,15 +2053,26 @@ $("openSetupAdminButton").addEventListener("click", () => {
   if (!connectorProfile(activeSourceId)) {
     createConnectorProfileForSource(activeSource());
   }
-  setAdminMode("edit");
+  openAdminDetail({ mode: "edit" });
   setView("admin");
   renderAll();
 });
 
 $("createSetupConfigButton").addEventListener("click", () => {
-  setAdminMode("edit");
+  openAdminDetail({ mode: "edit" });
   createConnectorProfileForSource(activeSource());
   setView("admin");
+  renderAll();
+});
+
+$("backToConnectorCatalogButton").addEventListener("click", () => {
+  openAdminCatalog();
+  renderAll();
+});
+
+$("cancelConnectorChangesButton").addEventListener("click", () => {
+  cancelConnectorChanges(activeSourceId);
+  openAdminCatalog();
   renderAll();
 });
 
@@ -2018,13 +2080,13 @@ $("setupShortcut").addEventListener("click", () => setView("setup"));
 $("runsShortcut").addEventListener("click", () => setView("runs"));
 $("monitorShortcut").addEventListener("click", () => setView("monitor"));
 $("adminShortcut").addEventListener("click", () => {
-  setAdminMode("view");
+  openAdminCatalog();
   setView("admin");
 });
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (button.dataset.view === "admin") setAdminMode("view");
+    if (button.dataset.view === "admin") openAdminCatalog();
     setView(button.dataset.view);
   });
 });

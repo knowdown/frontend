@@ -244,15 +244,21 @@
             <div class="workspace-meta" id="adminMeta"></div>
           </div>
           <div class="run-actions admin-toolbar">
-            <div class="admin-mode-switch" id="adminModeSwitch">
+            <div class="run-actions" id="adminCatalogActions">
+              <button class="ghost-button" id="createConnectorProfileButton" type="button">Create config</button>
+              <button class="ghost-button" id="resetAllAdminButton" type="button">Reset all local overrides</button>
+            </div>
+            <div class="run-actions" id="adminDetailActions" hidden>
+              <button class="ghost-button" id="backToConnectorCatalogButton" type="button">Back to connectors</button>
+              <button class="ghost-button" id="cancelConnectorChangesButton" type="button">Cancel changes</button>
+            </div>
+            <div class="admin-mode-switch" id="adminModeSwitch" hidden>
               <button class="ghost-button" id="adminViewModeButton" type="button">Read only</button>
               <button class="ghost-button" id="adminEditModeButton" type="button">Edit mode</button>
             </div>
-            <div class="run-actions" id="adminEditActions">
-            <button class="ghost-button" id="createConnectorProfileButton" type="button">Create config</button>
-            <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">Duplicate selected</button>
-            <button class="ghost-button" id="resetConnectorButton" type="button">Reset connector</button>
-            <button class="ghost-button" id="resetAllAdminButton" type="button">Reset all local overrides</button>
+            <div class="run-actions" id="adminEditActions" hidden>
+              <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">Duplicate selected</button>
+              <button class="ghost-button" id="resetConnectorButton" type="button">Reset connector</button>
             </div>
           </div>
         </section>
@@ -262,14 +268,14 @@
           <p id="adminBannerCopy">Changes here persist in this browser so teams can model connector setup now. Backend persistence and GitHub-backed config updates can layer onto the same contract later.</p>
         </section>
 
-        <div class="admin-shell">
-          <aside class="plain-panel admin-catalog-panel">
+        <div class="admin-shell" id="adminShell">
+          <aside class="plain-panel admin-catalog-panel" id="adminCatalogPanel">
             <h2>Connector catalog</h2>
             <p class="setup-panel-copy">Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.</p>
             <div class="admin-connector-list" id="adminConnectorCatalog"></div>
           </aside>
 
-          <section class="admin-detail-stage">
+          <section class="admin-detail-stage" id="adminDetailStage" hidden>
             <section class="plain-panel admin-selected-panel">
               <h2>Selected connector</h2>
               <div id="adminSelectedHeader"></div>

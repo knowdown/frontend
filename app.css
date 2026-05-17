@@ -764,6 +764,14 @@ button {
   align-items: start;
 }
 
+.admin-shell.catalog-only {
+  grid-template-columns: minmax(320px, 460px);
+}
+
+.admin-shell.detail-only {
+  grid-template-columns: 1fr;
+}
+
 .admin-catalog-panel {
   position: sticky;
   top: 16px;
@@ -801,6 +809,16 @@ button {
 
 .admin-selected-header p {
   margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.admin-empty-state {
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fbfcff;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
