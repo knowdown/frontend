@@ -430,6 +430,16 @@ function recommendedSourceForFlow(flow = activeFlow()) {
   return connectors.find((connector) => connector.id === flow.recommendedSourceId) || flowSources(flow)[0] || null;
 }
 
+function primarySourceLabel(flow = activeFlow()) {
+  const recommended = recommendedSourceForFlow(flow);
+  return flow?.primarySourceLabel || recommended?.name || "Primary source";
+}
+
+function defaultImplementationVendor(flow = activeFlow()) {
+  const recommended = recommendedSourceForFlow(flow);
+  return flow?.defaultImplementationVendor || recommended?.name || "Default implementation";
+}
+
 function sourceSupportedByFlow(source = activeSource(), flow = activeFlow()) {
   if (!source || !flow) return false;
   return (flow.connectorIds || []).includes(source.id);
@@ -575,15 +585,18 @@ function setupHint(flow, source, recommendedSource) {
     return "Pick a flow and a source. Knockdown will then show you the exact connector setup path and first dry-run target.";
   }
 
+  const primaryLabel = primarySourceLabel(flow);
+  const defaultVendor = defaultImplementationVendor(flow);
+
   if (!sourceSupportedByFlow(source, flow)) {
-    return `${source.name} is not part of the ${flow.name} path. Start with ${recommendedSource?.name || "a supported primary source"}, then attach supporting connectors after the dry-run succeeds.`;
+    return `${source.name} is not part of the ${flow.name} path. Start with ${primaryLabel}, then attach supporting connectors after the dry-run succeeds. ${defaultVendor} is the default shipped implementation vendor.`;
   }
 
   if (!isPrimarySource(source, flow)) {
-    return `${source.name} is a supporting connector for ${flow.name}. Use ${recommendedSource?.name || "the recommended source"} as the primary intake source, then add ${source.name} for validation or enrichment.`;
+    return `${source.name} is a supporting connector for ${flow.name}. Use ${primaryLabel} as the primary intake source, then add ${source.name} for validation or enrichment. ${defaultVendor} is the default shipped implementation vendor.`;
   }
 
-  return `${source.name} is the primary source for ${flow.name}. Next, bind its credentials, confirm field mapping, and run one sample item through a dry-run before enabling writeback.`;
+  return `${source.name} is currently fulfilling the ${primaryLabel.toLowerCase()} role for ${flow.name}. Next, bind its credentials, confirm field mapping, and run one sample item through a dry-run before enabling writeback. ${defaultVendor} is the default shipped implementation vendor for this contract.`;
 }
 
 function renderSetup() {
@@ -684,7 +697,8 @@ function renderSetup() {
   workTypes
     .filter((flowItem) => matches([flowItem.name, flowItem.summary, flowItem.approvalPosture]))
     .forEach((flowItem) => {
-      const recommended = recommendedSourceForFlow(flowItem);
+      const primaryLabelForFlow = primarySourceLabel(flowItem);
+      const defaultVendorForFlow = defaultImplementationVendor(flowItem);
       const button = document.createElement("button");
       button.className = `template-tile${flowItem.id === activeFlowId ? " active" : ""}`;
       button.type = "button";
@@ -694,7 +708,8 @@ function renderSetup() {
           <span class="status-dot ${statusClass(flowItem.status)}">${escapeHtml(flowItem.status)}</span>
         </div>
         <p>${escapeHtml(flowItem.summary)}</p>
-        <div class="tile-meta">Recommended source: ${escapeHtml(recommended?.name || "Choose a source")}</div>
+        <div class="tile-meta">Primary source contract: ${escapeHtml(primaryLabelForFlow)}</div>
+        <div class="tile-meta">Default implementation: ${escapeHtml(defaultVendorForFlow)}</div>
       `;
       button.addEventListener("click", () => {
         setFlow(flowItem.id);
@@ -705,7 +720,9 @@ function renderSetup() {
 
   $("setupSourceCatalog").innerHTML = displaySources.map((item) => {
     const profileForSource = connectorProfile(item.id);
-    const role = item.id === recommendedSource?.id ? "Primary source" : "Supporting connector";
+    const role = item.id === recommendedSource?.id
+      ? `${primarySourceLabel(flow)} · default implementation vendor`
+      : "Supporting connector";
     const status = profileForSource
       ? `${profileForSource.status || item.status} · ${currentRuntimeMode(profileForSource)?.label || "No mode"}`
       : "No editable config profile";
@@ -731,6 +748,8 @@ function renderSetup() {
   $("setupSourceRole").innerHTML = [
     ["Selected source", source?.name || "Choose a source"],
     ["Source role", isPrimarySource(source, flow) ? "Primary intake source" : sourceSupportedByFlow(source, flow) ? "Supporting connector" : "Not mapped to this workload"],
+    ["Primary source contract", primarySourceLabel(flow)],
+    ["Default implementation vendor", defaultImplementationVendor(flow)],
     ["What source means here", flowGuide.sourceRole || "The source is the system of record that gives Knockdown the work item plus safe writeback target."],
   ].map(([label, value]) => `
     <div class="selected-row">
@@ -843,7 +862,8 @@ function renderSetup() {
 
   $("setupNextAction").innerHTML = [
     ["Next action", hasEditableConfig ? flowGuide.nextAction || "Finish any missing bindings, then run a sample item in dry-run mode." : "Create a connector config first, then come back here to validate the source against the selected workload."],
-    ["Primary source", recommendedSource?.name || "No recommended source yet"],
+    ["Primary source contract", primarySourceLabel(flow)],
+    ["Default implementation vendor", defaultImplementationVendor(flow)],
     ["Sample item", flow?.sampleItem || "Pick one representative work item for a safe dry-run."],
     ["Where config lives", hasEditableConfig ? sourceConfig.connectorFile || "Connector file" : "Create connector config to generate files"],
     ["Profile posture", profile?.policySummary || flow?.approvalPosture || "Dry-run first"],

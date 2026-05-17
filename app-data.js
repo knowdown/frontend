@@ -51,6 +51,9 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       name: "Defect Delivery",
       status: "LIVE",
       profileId: "defect",
+      primarySourceLabel: "Primary defect source",
+      primarySourceDescription: "Vendor-agnostic defect system of record that satisfies the normalized defect intake contract.",
+      defaultImplementationVendor: "ServiceNow BT1 (OOTB)",
       summary: "End-to-end defect handling with guarded source sync, runtime validation, and PR packaging.",
       defaultRunMode: "Autonomous with gates",
       routingSignals: ["DEF prefix", "bug semantics", "reproduction fields"],
@@ -63,8 +66,8 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       recommendedSourceId: "servicenow-bt1",
       sampleItem: "Use a real defect identifier such as DEF0842192 and confirm repo ownership resolves cleanly.",
       setupGuide: {
-        nextAction: "Connect the primary defect source first, then add validation and knowledge connectors as supporting context.",
-        sourceRole: "Primary intake should come from a work-item system. Playwright and the knowledge plane support validation and enrichment, but they are not the main source of record.",
+        nextAction: "Connect a primary defect source first, then add validation and knowledge connectors as supporting context. ServiceNow BT1 is the default shipped implementation vendor for this contract.",
+        sourceRole: "Primary intake should come from a vendor-agnostic defect system of record. ServiceNow BT1 is the default shipped implementation, while Playwright and the knowledge plane remain supporting connectors for validation and enrichment.",
         dryRunGoal: "The first dry-run should normalize the defect, resolve repo ownership, and pause before any writeback."
       }
     },
@@ -278,12 +281,12 @@ window.KNOCKDOWN_CONSOLE_DATA = {
   chats: [
     {
       id: "defect-bt1",
-      title: "Deliver DEF0842192 across configured enterprise connectors",
-      source: "ServiceNow BT1 / DEF0842192",
+      title: "Deliver DEF0842192 across the primary defect source and configured enterprise connectors",
+      source: "Primary defect source / DEF0842192",
       time: "2m ago",
       stage: "Validation",
       profile: "Defect",
-      sourceGraph: "ServiceNow BT1 + GitHub + Knowledge Plane",
+      sourceGraph: "Primary defect source (default: ServiceNow BT1) + GitHub + Knowledge Plane",
       workflowStage: "Validation",
       meta: ["Owner: UXC Controls", "Playbook chain: intake -> fix -> verify", "Human gate: PR + source sync"],
       insights: [
