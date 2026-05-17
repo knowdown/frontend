@@ -106,9 +106,21 @@ const createById = (id, tagName = "div") => {
   "templateList",
   "sourceSelect",
   "flowSelect",
+  "setupSelectionHint",
+  "setupStateBanner",
+  "setupStageStrip",
   "setupFocus",
   "workTypeRegistry",
-  "setupChecklistList",
+  "setupSourceCatalog",
+  "setupSourceRole",
+  "setupConfigStatus",
+  "setupConfigArtifacts",
+  "setupConfigSnapshot",
+  "setupStorageMap",
+  "setupRequiredInputs",
+  "setupLaunchChecklist",
+  "setupNextAction",
+  "setupSourceGuide",
   "setupConfigList",
   "runTitle",
   "runMeta",
@@ -130,6 +142,16 @@ const createById = (id, tagName = "div") => {
   "providerGrid",
   "policyList",
   "secretBindings",
+  "adminMeta",
+  "adminConnectorCatalog",
+  "adminSummary",
+  "adminBasicsPanel",
+  "adminRuntimePanel",
+  "adminToolMappings",
+  "adminBindings",
+  "adminPolicy",
+  "adminPersistencePanel",
+  "adminConfigPreview",
   "composerInput",
   "attachContextButton",
   "sendButton",
@@ -143,16 +165,25 @@ const createById = (id, tagName = "div") => {
   "setupShortcut",
   "runsShortcut",
   "monitorShortcut",
+  "adminShortcut",
   "historyToggle",
   "connectorToggle",
+  "openSetupAdminButton",
+  "createSetupConfigButton",
+  "createConnectorProfileButton",
+  "duplicateConnectorProfileButton",
+  "resetConnectorButton",
+  "resetAllAdminButton",
   "historyPanel",
   "connectorPanel",
   "setupPanel",
   "runsPanel",
   "monitorPanel",
+  "adminPanel",
   "setupTab",
   "runsTab",
   "monitorTab",
+  "adminTab",
 ].forEach((id) => createById(
   id,
   id === "sourceSelect" ||
@@ -167,6 +198,12 @@ const createById = (id, tagName = "div") => {
   id === "pauseRunButton" ||
   id === "launchRunButton" ||
   id === "newRunButton" ||
+  id === "openSetupAdminButton" ||
+  id === "createSetupConfigButton" ||
+  id === "createConnectorProfileButton" ||
+  id === "duplicateConnectorProfileButton" ||
+  id === "resetConnectorButton" ||
+  id === "resetAllAdminButton" ||
   id === "connectSourceAdapterButton" ||
   id === "switchWorkTypeButton" ||
   id === "contextDiagnosticsButton" ||
@@ -195,10 +232,13 @@ elements.get("runsTab").dataset.view = "runs";
 elements.get("runsTab").classList.add("primary-nav");
 elements.get("monitorTab").dataset.view = "monitor";
 elements.get("monitorTab").classList.add("primary-nav");
+elements.get("adminTab").dataset.view = "admin";
+elements.get("adminTab").classList.add("primary-nav");
 const workspaceTabs = [
   elements.get("setupTab"),
   elements.get("runsTab"),
   elements.get("monitorTab"),
+  elements.get("adminTab"),
 ];
 
 const documentStub = {
@@ -243,10 +283,13 @@ function assert(condition, message) {
 }
 
 assert(elements.get("setupPanel").hidden === false, "Setup should be the default view");
-assert(elements.get("chatTitle").textContent.includes("What do you want"), "Header should explain the setup-first experience");
+assert(elements.get("chatTitle").textContent.includes("What do you want Knockdown to handle"), "Header should explain the setup-first experience");
 assert(elements.get("sourceSelect").innerHTML.includes("ServiceNow"), "Source selector should render");
 assert(elements.get("flowSelect").innerHTML.includes("Defect Delivery"), "Flow selector should render");
 assert(elements.get("workTypeRegistry").children.length >= 1, "Flow templates should render");
+assert(elements.get("setupStateBanner").innerHTML.includes("connector config"), "Setup state banner should explain config status");
+assert(elements.get("setupConfigSnapshot").innerHTML.length > 0, "Setup should expose a config snapshot");
+assert(elements.get("setupStorageMap").innerHTML.includes("Admin"), "Setup should explain where settings are configured");
 
 elements.get("sourceSelect").value = "github-issues";
 elements.get("sourceSelect").dispatchEvent({ type: "change", target: elements.get("sourceSelect") });
@@ -286,5 +329,13 @@ const beforeNewRunCount = elements.get("historyList").children.length;
 elements.get("newRunButton").click();
 assert(elements.get("historyList").children.length >= beforeNewRunCount, "Starting from an example should keep runs populated");
 assert(elements.get("runsPanel").hidden === false, "New example run should open the runs view");
+
+elements.get("setupShortcut").click();
+elements.get("sourceSelect").value = "playwright";
+elements.get("sourceSelect").dispatchEvent({ type: "change", target: elements.get("sourceSelect") });
+elements.get("createSetupConfigButton").click();
+assert(elements.get("adminPanel").hidden === false, "Creating a setup config should open Admin");
+assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin should open on the newly created source config");
+assert(elements.get("setupConfigStatus").innerHTML.includes("Connector config"), "Setup config status should stay renderable after creating a config");
 
 console.log("frontend smoke test passed");

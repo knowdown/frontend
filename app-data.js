@@ -59,7 +59,14 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       outputs: ["outcome", "report", "pull_request", "regression_tests"],
       approvalPosture: "PR + source sync approval",
       publishState: "Promoted to production",
-      testSurface: "Runtime reproduction, repo-local tests, generated regression coverage"
+      testSurface: "Runtime reproduction, repo-local tests, generated regression coverage",
+      recommendedSourceId: "servicenow-bt1",
+      sampleItem: "Use a real defect identifier such as DEF0842192 and confirm repo ownership resolves cleanly.",
+      setupGuide: {
+        nextAction: "Connect the primary defect source first, then add validation and knowledge connectors as supporting context.",
+        sourceRole: "Primary intake should come from a work-item system. Playwright and the knowledge plane support validation and enrichment, but they are not the main source of record.",
+        dryRunGoal: "The first dry-run should normalize the defect, resolve repo ownership, and pause before any writeback."
+      }
     },
     {
       id: "story-delivery",
@@ -74,7 +81,14 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       outputs: ["outcome", "implementation_summary", "report", "rollout_notes"],
       approvalPosture: "Architect and product-owner approval",
       publishState: "Promoted to production",
-      testSurface: "Acceptance criteria validation and repo-local checks"
+      testSurface: "Acceptance criteria validation and repo-local checks",
+      recommendedSourceId: "github-issues",
+      sampleItem: "Start with a GitHub issue that already contains acceptance criteria, scope notes, and repo hints.",
+      setupGuide: {
+        nextAction: "Point Knockdown at the story source, confirm acceptance criteria fields map cleanly, then bind repo access for implementation planning.",
+        sourceRole: "GitHub Issues is the best primary source for this flow. Add the knowledge plane for context and Playwright only if runtime validation is needed.",
+        dryRunGoal: "The first dry-run should extract acceptance criteria, choose the story playbook chain, and produce a plan without opening a PR."
+      }
     },
     {
       id: "case-resolution",
@@ -89,7 +103,14 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       outputs: ["outcome", "diagnosis", "customer_safe_summary", "next_action"],
       approvalPosture: "Customer-safe writeback",
       publishState: "Promoted to production",
-      testSurface: "Environment validation and knowledge-backed workaround checks"
+      testSurface: "Environment validation and knowledge-backed workaround checks",
+      recommendedSourceId: "servicenow-bt1",
+      sampleItem: "Use a support case with environment notes and customer impact already filled in.",
+      setupGuide: {
+        nextAction: "Connect the case system, verify comment-safe writeback policy, then add knowledge context for diagnosis and escalation.",
+        sourceRole: "The case system is the source of record. Knowledge lookups enrich the run, and a defect chain should only trigger when diagnosis confirms product work is needed.",
+        dryRunGoal: "The first dry-run should produce a diagnosis summary and show whether the case would stay in workaround mode or chain into defect intake."
+      }
     },
     {
       id: "enterprise-onboarding",
@@ -104,7 +125,14 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       outputs: ["connector_profile", "tool_mapping", "promotion_decision"],
       approvalPosture: "Publish after dry-run and policy review",
       publishState: "Draft",
-      testSurface: "Normalized schema preview, dry-run routing, writeback policy simulation"
+      testSurface: "Normalized schema preview, dry-run routing, writeback policy simulation",
+      recommendedSourceId: "enterprise-template",
+      sampleItem: "Use a single known work item from the target enterprise system and map its title, body, labels, comments, and attachments.",
+      setupGuide: {
+        nextAction: "Start from the connector template, bind credentials, map the external schema, and only then attach the workload playbook chain.",
+        sourceRole: "This flow exists to make a new source usable. Choose the connector template unless the source is already available as an out-of-the-box adapter.",
+        dryRunGoal: "The first dry-run should preview normalization, validate secret resolution, and simulate allowed writeback operations without publishing."
+      }
     }
   ],
   onboardingWorkflow: [
@@ -414,7 +442,17 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       latency: "240ms median",
       capabilities: ["Source reads", "Label sync", "Comments", "Attachments", "Validation run creation"],
       env: ["KNOCKDOWN_SOURCE_CONNECTOR", "KNOCKDOWN_SOURCE_RUNTIME_MODE", "KNOCKDOWN_SOURCE_BASE_URL", "SN_PROXY_URL", "SN_PROXY_USERNAME", "SN_PROXY_PASSWORD", "BT1_USER"],
-      operations: ["add_label", "remove_label", "add_comment", "add_attachment", "update_work_item", "create_validation_run"]
+      operations: ["add_label", "remove_label", "add_comment", "add_attachment", "update_work_item", "create_validation_run"],
+      setupGuide: {
+        setupType: "OOTB connector",
+        readiness: "Ready to dry-run once proxy URL and source credentials are bound.",
+        steps: [
+          "Set the source base URL and runtime mode.",
+          "Bind proxy credentials and the BT1 user secret in the target environment.",
+          "Run one defect or case through normalization before enabling guarded writeback."
+        ],
+        testHint: "Use a real BT1 item and verify comment or label writeback remains paused behind approval."
+      }
     },
     {
       id: "github-issues",
@@ -427,7 +465,17 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       latency: "180ms median",
       capabilities: ["Issue reads", "Repo search", "PR metadata", "Issue comments", "Label sync"],
       env: ["KNOCKDOWN_SOURCE_CONNECTOR", "GH_OWNER", "GH_REPO", "GH_TOKEN"],
-      operations: ["issue_read", "issue_write", "search_issues", "pull_request_read"]
+      operations: ["issue_read", "issue_write", "search_issues", "pull_request_read"],
+      setupGuide: {
+        setupType: "OOTB connector",
+        readiness: "Ready to dry-run once repo coordinates and a GitHub token are configured.",
+        steps: [
+          "Set the owner, repo, and connector selector values.",
+          "Bind a PAT or GitHub App installation secret with issue and repo read access.",
+          "Test against one issue before turning on PR or issue writeback."
+        ],
+        testHint: "Choose an issue with clear acceptance criteria so the story or defect classifier has enough signal."
+      }
     },
     {
       id: "playwright",
@@ -440,7 +488,17 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       latency: "Session-based",
       capabilities: ["Runtime reproduction", "Verification", "Screenshots", "Interactive diagnostics"],
       env: ["PLAYWRIGHT_BROWSERS_PATH", "INSTANCE_URL", "ADMIN_USERNAME", "ADMIN_PASSWORD"],
-      operations: ["browser_navigate", "browser_snapshot", "browser_evaluate", "browser_screenshot"]
+      operations: ["browser_navigate", "browser_snapshot", "browser_evaluate", "browser_screenshot"],
+      setupGuide: {
+        setupType: "Validation connector",
+        readiness: "Use after a primary intake source is already configured.",
+        steps: [
+          "Install browser dependencies on the runner.",
+          "Bind the environment URL and operator credentials.",
+          "Validate that screenshots and runtime diagnostics work before attaching it to production playbooks."
+        ],
+        testHint: "This connector should be treated as a supporting validator, not the source of record."
+      }
     },
     {
       id: "knowledge-plane",
@@ -453,7 +511,17 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       latency: "Cached",
       capabilities: ["Similar work context", "Hotspots", "KB fusion", "SME hints"],
       env: ["SME_DIR", "REPO_*"],
-      operations: ["context_lookup", "knowledge_query", "repo_map_resolution"]
+      operations: ["context_lookup", "knowledge_query", "repo_map_resolution"],
+      setupGuide: {
+        setupType: "Context provider",
+        readiness: "Attach after the primary source is selected so routing and enrichment can share repo context.",
+        steps: [
+          "Point the provider at the repo and SME directories.",
+          "Confirm the index covers the repos used by the selected workload.",
+          "Validate a similar-work lookup from a sample item before promotion."
+        ],
+        testHint: "Knowledge lookups should enrich classification and planning, not replace the intake source."
+      }
     },
     {
       id: "enterprise-template",
@@ -466,7 +534,17 @@ window.KNOCKDOWN_CONSOLE_DATA = {
       latency: "N/A",
       capabilities: ["Custom source reads", "Custom writeback", "Vendor-specific routing"],
       env: ["KNOCKDOWN_SOURCE_BASE_URL", "KNOCKDOWN_SOURCE_TOKEN", "KNOCKDOWN_SOURCE_USERNAME"],
-      operations: ["replace_with_customer_operations"]
+      operations: ["replace_with_customer_operations"],
+      setupGuide: {
+        setupType: "Custom connector template",
+        readiness: "Not ready until schema mapping, credentials, and writeback policy are defined.",
+        steps: [
+          "Choose proxy MCP or vendor-native MCP as the runtime path.",
+          "Bind the source endpoint and customer credentials as environment-scoped secrets.",
+          "Map normalized fields and test one sample item in dry-run mode before publishing."
+        ],
+        testHint: "Use enterprise connector onboarding first, then switch to a workload-specific playbook after the source contract is stable."
+      }
     }
   ],
   adminConsole: {
@@ -912,6 +990,14 @@ window.KNOCKDOWN_CONSOLE_DATA = {
         }
       }
     ]
+  },
+  githubPersistenceDefaults: {
+    apiBase: "https://api.github.com",
+    owner: "knowdown",
+    repo: "framework",
+    branch: "main",
+    environment: "",
+    commitMessagePrefix: "chore(connectors): update"
   },
   providers: [
     {

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./app.css">
+<script defer src="https://cdn.jsdelivr.net/npm/libsodium-wrappers-sumo@0.7.15/dist/modules-sumo/libsodium-wrappers.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -31,6 +32,10 @@
       <button class="primary-nav" id="monitorTab" data-view="monitor" type="button">
         <span class="nav-icon">●</span>
         <span>Monitor</span>
+      </button>
+      <button class="primary-nav" id="adminTab" data-view="admin" type="button">
+        <span class="nav-icon">⌘</span>
+        <span>Admin</span>
       </button>
 
       <div class="side-section">
@@ -64,6 +69,7 @@
           <button class="ghost-button" id="setupShortcut" type="button">Setup</button>
           <button class="ghost-button" id="runsShortcut" type="button">Runs</button>
           <button class="ghost-button" id="monitorShortcut" type="button">Monitor</button>
+          <button class="ghost-button" id="adminShortcut" type="button">Admin</button>
           <button class="accent-button" id="launchRunButton" type="button">Start test run</button>
           <button class="mobile-toggle" id="connectorToggle" aria-label="Open details">
             <span></span>
@@ -76,37 +82,100 @@
       <section class="workspace-panel" id="setupPanel">
         <section class="setup-hero">
           <div class="workspace-kicker" id="workspaceKicker">Start here</div>
-          <h1 id="chatTitle">What do you want Knockdown to handle?</h1>
+          <h1 id="chatTitle">Set up a workload</h1>
           <div class="workspace-meta" id="chatMeta"></div>
 
           <div class="prompt-box">
             <label class="prompt-field">
-              <span>Source</span>
-              <select id="sourceSelect"></select>
-            </label>
-            <label class="prompt-field">
-              <span>Flow</span>
+              <span>Workload flow</span>
               <select id="flowSelect"></select>
             </label>
-            <button class="accent-button large" id="newRunButton" type="button">Create test run</button>
+            <label class="prompt-field">
+              <span>Source of record</span>
+              <select id="sourceSelect"></select>
+            </label>
+            <button class="accent-button large" id="newRunButton" type="button">Run setup dry-run</button>
           </div>
+          <div class="selection-hint" id="setupSelectionHint"></div>
         </section>
 
-        <section class="section-block">
-          <div class="section-heading">
-            <h2>Start with a template</h2>
-            <p>Pick the closest match. You can adjust the source, secrets, and writeback policy later.</p>
-          </div>
-          <div class="template-grid" id="workTypeRegistry"></div>
-        </section>
+        <div class="setup-workbench">
+          <section class="plain-panel span-2">
+            <h2>Setup path</h2>
+            <p class="setup-panel-copy">Choose the workload, confirm the source of record, inspect the connector config, then dry-run safely.</p>
+            <div class="setup-state-banner" id="setupStateBanner"></div>
+            <div class="setup-stage-strip" id="setupStageStrip"></div>
+          </section>
 
-        <section class="section-block">
-          <div class="section-heading">
-            <h2>Setup checklist</h2>
-            <p>These are the only things a new environment needs before a real run.</p>
-          </div>
-          <div class="checklist-grid" id="setupChecklistList"></div>
-        </section>
+          <section class="plain-panel">
+            <h2>1. Choose workload behavior</h2>
+            <p class="setup-panel-copy">Pick the playbook path Knockdown should run. This decides approvals, outputs, and the default source pattern.</p>
+            <div class="template-grid" id="workTypeRegistry"></div>
+          </section>
+
+          <section class="plain-panel">
+            <h2>2. Choose source of record</h2>
+            <p class="setup-panel-copy">Pick where the work item actually lives. Supporting connectors can be attached later, but the source of record should be right first.</p>
+            <div class="source-catalog" id="setupSourceCatalog"></div>
+            <div class="selected-summary" id="setupSourceRole"></div>
+          </section>
+
+          <section class="plain-panel span-2">
+            <h2>3. Connector config for this source</h2>
+            <p class="setup-panel-copy">This section now shows the actual config footprint for the selected source: what exists, what files it maps to, which runtime mode is active, and where each setting is configured.</p>
+            <div class="setup-config-grid">
+              <div class="guide-panel">
+                <h3>Config status</h3>
+                <div id="setupConfigStatus"></div>
+              </div>
+              <div class="guide-panel">
+                <h3>Config artifacts</h3>
+                <div id="setupConfigArtifacts"></div>
+              </div>
+            </div>
+            <div class="setup-config-grid setup-config-secondary">
+              <div class="guide-panel">
+                <h3>Config snapshot</h3>
+                <div id="setupConfigSnapshot"></div>
+              </div>
+              <div class="guide-panel">
+                <h3>Where each setting lives</h3>
+                <div id="setupStorageMap"></div>
+              </div>
+            </div>
+            <div class="setup-actions">
+              <button class="ghost-button" id="openSetupAdminButton" type="button">Edit selected config in Admin</button>
+              <button class="ghost-button" id="createSetupConfigButton" type="button">Create connector config</button>
+            </div>
+          </section>
+
+          <section class="plain-panel">
+            <h2>4. Required inputs</h2>
+            <p class="setup-panel-copy">Before a dry-run, confirm the environment values, secret references, and runtime bindings this source needs.</p>
+            <div id="setupRequiredInputs"></div>
+          </section>
+
+          <section class="plain-panel">
+            <h2>5. Launch readiness</h2>
+            <p class="setup-panel-copy">Use this to decide whether the connector is ready for a safe dry-run or if you should finish configuration first.</p>
+            <div id="setupLaunchChecklist"></div>
+          </section>
+
+          <section class="plain-panel span-2">
+            <h2>6. What happens next</h2>
+            <p class="setup-panel-copy">This area should answer the practical question after every selection: stay here, switch to Admin, create a config, or run the dry-run.</p>
+            <div class="setup-guide-grid">
+              <section class="guide-panel">
+                <h3>Next action</h3>
+                <div id="setupNextAction"></div>
+              </section>
+              <section class="guide-panel">
+                <h3>Source setup guidance</h3>
+                <div id="setupSourceGuide"></div>
+              </section>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section class="workspace-panel" id="runsPanel" hidden>
@@ -163,6 +232,66 @@
           <section class="plain-panel span-2">
             <h2>Needs attention</h2>
             <div class="heatmap-list" id="failureHeatmap"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="workspace-panel" id="adminPanel" hidden>
+        <section class="run-header">
+          <div>
+            <div class="workspace-kicker">Admin</div>
+            <h1>Connector control plane</h1>
+            <div class="workspace-meta" id="adminMeta"></div>
+          </div>
+          <div class="run-actions">
+            <button class="ghost-button" id="createConnectorProfileButton" type="button">Create config</button>
+            <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">Duplicate selected</button>
+            <button class="ghost-button" id="resetConnectorButton" type="button">Reset connector</button>
+            <button class="ghost-button" id="resetAllAdminButton" type="button">Reset all local overrides</button>
+          </div>
+        </section>
+
+        <section class="admin-banner">
+          <strong>Local admin preview</strong>
+          <p>Changes here persist in this browser so teams can model connector setup now. Backend persistence and GitHub-backed config updates can layer onto the same contract later.</p>
+        </section>
+
+        <div class="admin-layout">
+          <section class="plain-panel">
+            <h2>Connector catalog</h2>
+            <div class="admin-connector-list" id="adminConnectorCatalog"></div>
+          </section>
+          <section class="plain-panel">
+            <h2>Selected connector</h2>
+            <div class="summary-list" id="adminSummary"></div>
+          </section>
+          <section class="plain-panel span-2">
+            <h2>Connector basics</h2>
+            <div id="adminBasicsPanel"></div>
+          </section>
+          <section class="plain-panel span-2">
+            <h2>Runtime and MCP fabric</h2>
+            <div id="adminRuntimePanel"></div>
+          </section>
+          <section class="plain-panel span-2">
+            <h2>Tool mappings</h2>
+            <div id="adminToolMappings"></div>
+          </section>
+          <section class="plain-panel">
+            <h2>Env and secrets</h2>
+            <div id="adminBindings"></div>
+          </section>
+          <section class="plain-panel">
+            <h2>Writeback policy</h2>
+            <div id="adminPolicy"></div>
+          </section>
+          <section class="plain-panel span-2">
+            <h2>GitHub persistence</h2>
+            <div id="adminPersistencePanel"></div>
+          </section>
+          <section class="plain-panel span-2">
+            <h2>Config preview</h2>
+            <pre class="config-preview" id="adminConfigPreview"></pre>
           </section>
         </div>
       </section>
