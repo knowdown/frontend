@@ -152,6 +152,8 @@ const createById = (id, tagName = "div") => {
   "adminBannerCopy",
   "adminShell",
   "adminCatalogPanel",
+  "adminConnectorSearch",
+  "adminConnectorSearchMeta",
   "adminDetailStage",
   "backToConnectorCatalogButton",
   "cancelConnectorChangesButton",
@@ -202,6 +204,8 @@ const createById = (id, tagName = "div") => {
   id === "sourceSelect" ||
   id === "flowSelect"
     ? "select" :
+  id === "adminConnectorSearch"
+    ? "input" :
   id.endsWith("Button") ||
   id.endsWith("Shortcut") ||
   id.endsWith("Tab") ||
@@ -333,6 +337,11 @@ elements.get("adminShortcut").click();
 assert(elements.get("adminPanel").hidden === false, "Admin view should open from shortcut");
 assert(elements.get("adminCatalogPanel").hidden === false, "Admin should open on the connector catalog");
 assert(elements.get("adminDetailStage").hidden === true, "Connector detail workspace should stay hidden until a connector is selected");
+assert(elements.get("adminConnectorCatalog").innerHTML.includes("ServiceNow"), "Catalog should render connector cards");
+assert(elements.get("adminConnectorSearchMeta").innerHTML.includes("shown"), "Catalog should show search result counts");
+elements.get("adminConnectorSearch").value = "github";
+elements.get("adminConnectorSearch").dispatchEvent({ type: "input", target: elements.get("adminConnectorSearch") });
+assert(elements.get("adminConnectorCatalog").innerHTML.includes("GitHub"), "Catalog search should filter connectors");
 
 globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
@@ -342,6 +351,8 @@ globalSearchInput.value = "";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
 filterRunning.click();
 assert(elements.get("historyList").children.length >= 1, "Run filter should keep matching runs");
+elements.get("adminConnectorSearch").value = "";
+elements.get("adminConnectorSearch").dispatchEvent({ type: "input", target: elements.get("adminConnectorSearch") });
 
 const beforeNewRunCount = elements.get("historyList").children.length;
 elements.get("newRunButton").click();

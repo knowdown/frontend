@@ -272,6 +272,13 @@
           <aside class="plain-panel admin-catalog-panel" id="adminCatalogPanel">
             <h2>Connector catalog</h2>
             <p class="setup-panel-copy">Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.</p>
+            <div class="admin-catalog-toolbar">
+              <label class="prompt-field">
+                <span>Search connectors</span>
+                <input id="adminConnectorSearch" type="text" placeholder="Search by name, runtime, category, tag, or summary">
+              </label>
+              <div class="workspace-meta" id="adminConnectorSearchMeta"></div>
+            </div>
             <div class="admin-connector-list" id="adminConnectorCatalog"></div>
           </aside>
 

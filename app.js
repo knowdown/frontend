@@ -40,6 +40,7 @@ let activeFilter = "all";
 let searchTerm = "";
 let adminMode = "view";
 let adminStage = "catalog";
+let adminCatalogSearchTerm = "";
 let adminCreatedProfileIds = new Set();
 let connectorProfilesState = hydrateConnectorProfiles(baseConnectorProfiles, loadAdminOverrides());
 let githubPersistenceState = hydrateGithubPersistence(loadGithubPersistence());
@@ -297,6 +298,13 @@ function encodeBase64Utf8(value) {
 function matches(values) {
   if (!searchTerm) return true;
   return values.filter(Boolean).join(" ").toLowerCase().includes(searchTerm);
+}
+
+function matchesAdminCatalog(values) {
+  const haystack = values.filter(Boolean).join(" ").toLowerCase();
+  if (searchTerm && !haystack.includes(searchTerm)) return false;
+  if (adminCatalogSearchTerm && !haystack.includes(adminCatalogSearchTerm)) return false;
+  return true;
 }
 
 function statusClass(status) {
@@ -1303,14 +1311,28 @@ function renderAdmin() {
       ? "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode."
       : "Choose a connector from the catalog or create a new one to open its dedicated detail workspace.";
 
+  const visibleCatalogProfiles = connectorProfilesState
+    .filter((item) => matchesAdminCatalog([
+      item.name,
+      item.summary,
+      item.category,
+      currentRuntimeMode(item)?.label,
+      ...(item.tags || []),
+    ]));
+
+  $("adminConnectorSearch").value = adminCatalogSearchTerm;
+  $("adminConnectorSearchMeta").innerHTML = [
+    `${visibleCatalogProfiles.length} shown`,
+    `${connectorProfilesState.length} total`,
+  ].map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+
   $("adminMeta").innerHTML = [
     profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
     profile?.sourceConfig ? `Source config: ${profile.sourceConfig}` : "",
     mode?.label ? `Mode: ${mode.label}` : "",
   ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
 
-  $("adminConnectorCatalog").innerHTML = connectorProfilesState
-    .filter((item) => matches([item.name, item.summary, item.category, ...(item.tags || [])]))
+  $("adminConnectorCatalog").innerHTML = visibleCatalogProfiles
     .map((item) => `
       <button class="admin-connector-card${item.id === profile?.id ? " active" : ""}" data-admin-select-connector="${escapeHtml(item.id)}" type="button">
         <div class="admin-card-top">
@@ -1324,6 +1346,12 @@ function renderAdmin() {
         </div>
       </button>
     `).join("");
+
+  if (!visibleCatalogProfiles.length) {
+    $("adminConnectorCatalog").innerHTML = `
+      <div class="admin-empty-state">No connectors match this search yet. Try a different name, tag, category, or runtime mode.</div>
+    `;
+  }
 
   $("adminSummary").innerHTML = profile ? `
     <div class="summary-row">
@@ -1706,6 +1734,11 @@ function renderAdmin() {
 }
 
 function bindAdminPanelEvents() {
+  $("adminConnectorSearch")?.addEventListener("input", (event) => {
+    adminCatalogSearchTerm = event.target.value.trim().toLowerCase();
+    renderAll();
+  });
+
   $("adminViewModeButton")?.addEventListener("click", () => {
     setAdminMode("view");
     renderAll();
