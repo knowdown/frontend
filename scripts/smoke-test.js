@@ -143,7 +143,10 @@ const createById = (id, tagName = "div") => {
   "policyList",
   "secretBindings",
   "adminMeta",
+  "adminScopeSwitch",
   "adminModeSwitch",
+  "adminConnectorsScopeButton",
+  "adminWorkflowsScopeButton",
   "adminViewModeButton",
   "adminEditModeButton",
   "adminCatalogActions",
@@ -152,15 +155,21 @@ const createById = (id, tagName = "div") => {
   "adminBannerCopy",
   "adminShell",
   "adminCatalogPanel",
+  "adminCatalogTitle",
+  "adminCatalogDescription",
   "adminConnectorSearch",
+  "adminCatalogSearchLabel",
   "adminConnectorSearchMeta",
   "adminConnectorFilters",
   "adminDetailStage",
   "backToConnectorCatalogButton",
   "cancelConnectorChangesButton",
+  "adminDetailTitle",
   "adminSelectedHeader",
   "adminConnectorCatalog",
   "adminSummary",
+  "adminConnectorDetailSections",
+  "adminWorkflowDetailSections",
   "adminConnectorLifecyclePanel",
   "adminBasicsPanel",
   "adminRuntimePanel",
@@ -168,6 +177,7 @@ const createById = (id, tagName = "div") => {
   "adminBindings",
   "adminPolicy",
   "adminWorkflowPanel",
+  "adminWorkflowPreview",
   "adminPersistencePanel",
   "adminConfigPreview",
   "composerInput",
@@ -345,12 +355,32 @@ elements.get("adminShortcut").click();
 assert(elements.get("adminPanel").hidden === false, "Admin view should open from shortcut");
 assert(elements.get("adminCatalogPanel").hidden === false, "Admin should open on the connector catalog");
 assert(elements.get("adminDetailStage").hidden === true, "Connector detail workspace should stay hidden until a connector is selected");
+assert(elements.get("adminCatalogTitle").textContent.includes("Connector"), "Admin should default to the connector catalog");
 assert(elements.get("adminConnectorCatalog").innerHTML.includes("ServiceNow"), "Catalog should render connector cards");
 assert(elements.get("adminConnectorSearchMeta").innerHTML.includes("shown"), "Catalog should show search result counts");
 assert(Boolean(elements.get("adminConnectorFilters")), "Catalog should include the connector filter container");
 elements.get("adminConnectorSearch").value = "github";
 elements.get("adminConnectorSearch").dispatchEvent({ type: "input", target: elements.get("adminConnectorSearch") });
 assert(elements.get("adminConnectorCatalog").innerHTML.includes("GitHub"), "Catalog search should filter connectors");
+elements.get("adminWorkflowsScopeButton").click();
+assert(elements.get("adminCatalogTitle").textContent.includes("Workflow"), "Workflow scope should switch the catalog title");
+assert(elements.get("adminCatalogDescription").textContent.includes("workflow"), "Workflow scope should explain workflow browsing");
+assert(elements.get("adminCatalogSearchLabel").textContent.includes("workflows"), "Workflow scope should relabel search");
+assert(elements.get("adminConnectorFilters").hidden === true, "Connector-only filters should hide in workflow scope");
+assert(elements.get("adminConnectorCatalog").innerHTML.includes("Defect Delivery"), "Workflow scope should render workflow cards");
+assert(elements.get("createConnectorProfileButton").hidden === true, "Connector creation should hide in workflow scope");
+context.openAdminDetail({ entity: "workflows", mode: "edit" });
+context.renderAll();
+assert(elements.get("adminDetailStage").hidden === false, "Workflow detail workspace should open");
+assert(elements.get("adminDetailTitle").textContent.includes("workflow"), "Workflow detail should be labeled clearly");
+assert(elements.get("adminConnectorDetailSections").hidden === true, "Connector-only sections should hide for workflow detail");
+assert(elements.get("adminWorkflowDetailSections").hidden === false, "Workflow detail sections should show for workflow detail");
+assert(elements.get("adminWorkflowPanel").innerHTML.includes("Activation state"), "Workflow detail should show activation controls");
+assert(elements.get("backToConnectorCatalogButton").textContent.includes("workflows"), "Back action should target the workflow catalog");
+elements.get("backToConnectorCatalogButton").click();
+assert(elements.get("adminCatalogPanel").hidden === false, "Back should return to the workflow catalog");
+elements.get("adminConnectorsScopeButton").click();
+assert(elements.get("adminCatalogTitle").textContent.includes("Connector"), "Connector scope should be restorable");
 
 globalSearchInput.value = "Architect approval";
 globalSearchInput.dispatchEvent({ type: "input", target: globalSearchInput });
@@ -378,7 +408,7 @@ assert(elements.get("adminDetailStage").hidden === false, "Detail workspace shou
 assert(elements.get("adminSelectedHeader").innerHTML.includes("Playwright"), "Selected connector workspace should show the active connector");
 assert(elements.get("adminConnectorLifecyclePanel").innerHTML.includes("Connector state"), "Admin should show connector lifecycle controls");
 assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin should open on the newly created source config");
-assert(elements.get("adminWorkflowPanel").innerHTML.includes("Workflow"), "Admin should show workflow activation controls");
+assert(elements.get("adminWorkflowDetailSections").hidden === true, "Workflow sections should stay hidden while editing a connector");
 assert(elements.get("adminEditModeButton").className.includes("active"), "Setup-driven admin opening should land in edit mode");
 assert(elements.get("adminEditActions").hidden === false, "Edit actions should be visible in edit mode");
 assert(elements.get("setupConfigStatus").innerHTML.includes("Connector config"), "Setup config status should stay renderable after creating a config");

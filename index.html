@@ -238,9 +238,9 @@
 
       <section class="workspace-panel" id="adminPanel" hidden>
         <section class="run-header">
-          <div>
+            <div>
             <div class="workspace-kicker">Admin</div>
-            <h1>Connector control plane</h1>
+            <h1>Control plane admin</h1>
             <div class="workspace-meta" id="adminMeta"></div>
           </div>
           <div class="run-actions admin-toolbar">
@@ -270,11 +270,15 @@
 
         <div class="admin-shell" id="adminShell">
           <aside class="plain-panel admin-catalog-panel" id="adminCatalogPanel">
-            <h2>Connector catalog</h2>
-            <p class="setup-panel-copy">Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.</p>
+            <div class="admin-mode-switch" id="adminScopeSwitch">
+              <button class="ghost-button active" id="adminConnectorsScopeButton" type="button">Connectors</button>
+              <button class="ghost-button" id="adminWorkflowsScopeButton" type="button">Workflows</button>
+            </div>
+            <h2 id="adminCatalogTitle">Connector catalog</h2>
+            <p class="setup-panel-copy" id="adminCatalogDescription">Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.</p>
             <div class="admin-catalog-toolbar">
               <label class="prompt-field">
-                <span>Search connectors</span>
+                <span id="adminCatalogSearchLabel">Search connectors</span>
                 <input id="adminConnectorSearch" type="text" placeholder="Search by name, runtime, category, tag, or summary">
               </label>
               <div class="workspace-meta" id="adminConnectorSearchMeta"></div>
@@ -291,12 +295,12 @@
 
           <section class="admin-detail-stage" id="adminDetailStage" hidden>
             <section class="plain-panel admin-selected-panel">
-              <h2>Selected connector</h2>
+              <h2 id="adminDetailTitle">Selected connector</h2>
               <div id="adminSelectedHeader"></div>
               <div class="summary-list" id="adminSummary"></div>
             </section>
 
-            <div class="admin-layout">
+            <div class="admin-layout" id="adminConnectorDetailSections">
               <section class="plain-panel span-2">
                 <h2>Connector lifecycle</h2>
                 <div id="adminConnectorLifecyclePanel"></div>
@@ -322,16 +326,23 @@
                 <div id="adminPolicy"></div>
               </section>
               <section class="plain-panel span-2">
-                <h2>Workflow activation</h2>
-                <div id="adminWorkflowPanel"></div>
-              </section>
-              <section class="plain-panel span-2">
                 <h2>GitHub persistence</h2>
                 <div id="adminPersistencePanel"></div>
               </section>
               <section class="plain-panel span-2">
                 <h2>Config preview</h2>
                 <pre class="config-preview" id="adminConfigPreview"></pre>
+              </section>
+            </div>
+
+            <div class="admin-layout" id="adminWorkflowDetailSections" hidden>
+              <section class="plain-panel span-2">
+                <h2>Workflow activation and settings</h2>
+                <div id="adminWorkflowPanel"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>Workflow preview</h2>
+                <pre class="config-preview" id="adminWorkflowPreview"></pre>
               </section>
             </div>
           </section>

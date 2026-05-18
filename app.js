@@ -53,6 +53,7 @@ let activeFilter = "all";
 let searchTerm = "";
 let adminMode = "view";
 let adminStage = "catalog";
+let adminEntity = "connectors";
 let adminCatalogSearchTerm = "";
 let activeAdminWorkflowId = workTypes[0]?.id || "";
 let adminCatalogFilter = "all";
@@ -370,6 +371,7 @@ function matchesAdminCatalog(values) {
 }
 
 function matchesAdminFilter(profile) {
+  if (adminEntity === "workflows") return true;
   if (adminCatalogFilter === "all") return true;
   const tags = profile.tags || [];
   const runtimeIds = (profile.runtimeModes || []).map((mode) => mode.id);
@@ -395,6 +397,10 @@ function setAdminMode(mode) {
   adminMode = mode === "edit" ? "edit" : "view";
 }
 
+function setAdminEntity(entity) {
+  adminEntity = entity === "workflows" ? "workflows" : "connectors";
+}
+
 function workflowProfile(id) {
   return workflowProfilesState.find((item) => item.id === id) || null;
 }
@@ -414,6 +420,7 @@ function openAdminCatalog() {
 
 function openAdminDetail(options = {}) {
   setAdminStage("detail");
+  if (options.entity) setAdminEntity(options.entity);
   if (options.mode) setAdminMode(options.mode);
 }
 
@@ -436,6 +443,21 @@ function cancelConnectorChanges(connectorId = activeSourceId) {
   }
   activeSourceId = connectorProfilesState[0]?.id || connectors[0]?.id || "";
   setPersistenceStatus("pending", "Canceled connector changes and returned to the connector catalog.");
+}
+
+function resetWorkflowProfile(workflowId) {
+  const base = baseWorkflowProfiles.find((profile) => profile.id === workflowId);
+  if (!base) return;
+  workflowProfilesState = workflowProfilesState.map((profile) => (
+    profile.id === workflowId ? deepClone(base) : profile
+  ));
+  saveWorkflowOverrides();
+}
+
+function cancelWorkflowChanges(workflowId = activeAdminWorkflowId) {
+  if (!workflowId) return;
+  resetWorkflowProfile(workflowId);
+  setPersistenceStatus("pending", "Canceled workflow changes and returned to the workflow catalog.");
 }
 
 function summarizeMappingPreview(mappings = [], limit = 3) {
@@ -1464,6 +1486,7 @@ function renderAdmin() {
   const workflowReadiness = workflowConnectorReadiness(workflow);
   const isEditMode = adminMode === "edit";
   const isDetailStage = adminStage === "detail";
+  const isWorkflowEntity = adminEntity === "workflows";
 
   $("adminShell").classList.toggle("catalog-only", !isDetailStage);
   $("adminShell").classList.toggle("detail-only", isDetailStage);
@@ -1472,19 +1495,47 @@ function renderAdmin() {
   $("adminCatalogActions").hidden = isDetailStage;
   $("adminDetailActions").hidden = !isDetailStage;
   $("adminModeSwitch").hidden = !isDetailStage;
+  $("adminConnectorDetailSections").hidden = isWorkflowEntity || !isDetailStage;
+  $("adminWorkflowDetailSections").hidden = !isWorkflowEntity || !isDetailStage;
+  $("createConnectorProfileButton").hidden = isWorkflowEntity;
+  $("backToConnectorCatalogButton").textContent = isWorkflowEntity ? "Back to workflows" : "Back to connectors";
 
+  $("adminConnectorsScopeButton").classList.toggle("active", !isWorkflowEntity);
+  $("adminWorkflowsScopeButton").classList.toggle("active", isWorkflowEntity);
   $("adminViewModeButton").classList.toggle("active", !isEditMode);
   $("adminEditModeButton").classList.toggle("active", isEditMode);
-  $("adminEditActions").hidden = !isEditMode || !isDetailStage;
+  $("adminEditActions").hidden = !isEditMode || !isDetailStage || isWorkflowEntity;
   $("adminBannerCopy").textContent = isEditMode
-    ? "Edit mode is active. Update connector details, bindings, and persistence targets here, then save when you are ready."
+    ? isWorkflowEntity
+      ? "Edit mode is active. Update workflow activation settings, retry counts, trigger conditions, and concurrency here."
+      : "Edit mode is active. Update connector details, bindings, and persistence targets here, then save when you are ready."
     : isDetailStage
-      ? "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode."
-      : "Choose a connector from the catalog or create a new one to open its dedicated detail workspace.";
+      ? isWorkflowEntity
+        ? "Read-only mode is active. Review workflow activation readiness and YAML-level settings before switching to Edit mode."
+        : "Read-only mode is active. Review the connector contract, runtime posture, bindings, and GitHub target here before switching to Edit mode."
+      : isWorkflowEntity
+        ? "Choose a workflow from the catalog to review activation gates and workflow-level configuration."
+        : "Choose a connector from the catalog or create a new one to open its dedicated detail workspace.";
 
-  const visibleCatalogProfiles = connectorProfilesState
+  $("adminCatalogTitle").textContent = isWorkflowEntity ? "Workflow catalog" : "Connector catalog";
+  $("adminCatalogDescription").textContent = isWorkflowEntity
+    ? "Browse available workflows here. Selecting one opens workflow activation and YAML-level controls in a dedicated detail workspace."
+    : "Browse all available connector profiles here. Selecting one updates the dedicated view or edit workspace on the right.";
+  $("adminCatalogSearchLabel").textContent = isWorkflowEntity ? "Search workflows" : "Search connectors";
+  $("adminConnectorSearch").placeholder = isWorkflowEntity
+    ? "Search by workflow name, trigger condition, file, or summary"
+    : "Search by name, runtime, category, tag, or summary";
+  $("adminConnectorFilters").hidden = isWorkflowEntity;
+
+  const visibleCatalogProfiles = (isWorkflowEntity ? workflowProfilesState : connectorProfilesState)
     .filter((item) => matchesAdminFilter(item))
-    .filter((item) => matchesAdminCatalog([
+    .filter((item) => matchesAdminCatalog(isWorkflowEntity ? [
+      item.name,
+      item.summary,
+      item.workflowFile,
+      item.triggerConditions,
+      item.activationState,
+    ] : [
       item.name,
       item.summary,
       item.category,
@@ -1498,39 +1549,88 @@ function renderAdmin() {
   });
   $("adminConnectorSearchMeta").innerHTML = [
     `${visibleCatalogProfiles.length} shown`,
-    `${connectorProfilesState.length} total`,
+    `${isWorkflowEntity ? workflowProfilesState.length : connectorProfilesState.length} total`,
   ].map((item) => `<span>${escapeHtml(item)}</span>`).join("");
 
   $("adminMeta").innerHTML = [
-    profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
-    profile?.sourceConfig ? `Source config: ${profile.sourceConfig}` : "",
-    mode?.label ? `Mode: ${mode.label}` : "",
-    profile?.lifecycleState ? `Connector state: ${profile.lifecycleState}` : "",
+    isWorkflowEntity
+      ? workflow?.workflowFile ? `Workflow: ${workflow.workflowFile}` : ""
+      : profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
+    isWorkflowEntity
+      ? workflow?.activationState ? `Workflow state: ${workflow.activationState}` : ""
+      : profile?.sourceConfig ? `Source config: ${profile.sourceConfig}` : "",
+    isWorkflowEntity
+      ? workflow?.triggerConditions ? `Triggers: ${workflow.triggerConditions}` : ""
+      : mode?.label ? `Mode: ${mode.label}` : "",
+    !isWorkflowEntity && profile?.lifecycleState ? `Connector state: ${profile.lifecycleState}` : "",
   ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
 
   $("adminConnectorCatalog").innerHTML = visibleCatalogProfiles
     .map((item) => `
-      <button class="admin-connector-card${item.id === profile?.id ? " active" : ""}" data-admin-select-connector="${escapeHtml(item.id)}" type="button">
+      <button class="admin-connector-card${
+        isWorkflowEntity
+          ? item.id === workflow?.id ? " active" : ""
+          : item.id === profile?.id ? " active" : ""
+      }" ${
+        isWorkflowEntity
+          ? `data-admin-select-workflow="${escapeHtml(item.id)}"`
+          : `data-admin-select-connector="${escapeHtml(item.id)}"`
+      } type="button">
         <div class="admin-card-top">
           <strong>${escapeHtml(item.name)}</strong>
-          <span class="status-dot ${statusClass(item.status)}">${escapeHtml(item.status)}</span>
+          <span class="status-dot ${statusClass(isWorkflowEntity ? item.activationState : item.status)}">${escapeHtml(isWorkflowEntity ? item.activationState : item.status)}</span>
         </div>
         <p>${escapeHtml(item.summary)}</p>
         <div class="meta-tag-row">
-          <span>${escapeHtml(currentRuntimeMode(item)?.label || "No mode")}</span>
-          <span>${escapeHtml(item.lifecycleState || "inactive")}</span>
-          <span>${escapeHtml(`${configuredBindingCount(item)} configured`)}</span>
+          ${isWorkflowEntity ? `
+            <span>${escapeHtml(item.workflowFile || "No workflow file")}</span>
+            <span>${escapeHtml(`${item.retryCount ?? 0} retries`)}</span>
+            <span>${escapeHtml(`Concurrency ${item.maxConcurrency ?? 1}`)}</span>
+          ` : `
+            <span>${escapeHtml(currentRuntimeMode(item)?.label || "No mode")}</span>
+            <span>${escapeHtml(item.lifecycleState || "inactive")}</span>
+            <span>${escapeHtml(`${configuredBindingCount(item)} configured`)}</span>
+          `}
         </div>
       </button>
     `).join("");
 
   if (!visibleCatalogProfiles.length) {
     $("adminConnectorCatalog").innerHTML = `
-      <div class="admin-empty-state">No connectors match this search yet. Try a different name, tag, category, or runtime mode.</div>
+      <div class="admin-empty-state">${
+        isWorkflowEntity
+          ? "No workflows match this search yet. Try a different workflow name, file, or trigger condition."
+          : "No connectors match this search yet. Try a different name, tag, category, or runtime mode."
+      }</div>
     `;
   }
 
-  $("adminSummary").innerHTML = profile ? `
+  $("adminSummary").innerHTML = isWorkflowEntity ? (workflow ? `
+    <div class="summary-row">
+      <span>Workflow</span>
+      <strong>${escapeHtml(workflow.name)}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Activation state</span>
+      <strong>${escapeHtml(workflow.activationState || "inactive")}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Workflow file</span>
+      <strong>${escapeHtml(workflow.workflowFile || "Not set")}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Retry count</span>
+      <strong>${escapeHtml(String(workflow.retryCount ?? 0))}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Max concurrency</span>
+      <strong>${escapeHtml(String(workflow.maxConcurrency ?? 1))}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Activation gate</span>
+      <strong>${escapeHtml(workflowReadiness.canActivate ? "Ready to activate" : `Blocked by ${workflowReadiness.missingRequired.length} connector(s)`)}</strong>
+    </div>
+  ` : "") : (profile ? `
     <div class="summary-row">
       <span>Connector</span>
       <strong>${escapeHtml(profile.name)}</strong>
@@ -1558,28 +1658,36 @@ function renderAdmin() {
     <div class="meta-tag-row">
       ${(profile.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
     </div>
-  ` : "";
+  ` : "");
 
-  $("adminSelectedHeader").innerHTML = isDetailStage && profile ? `
+  $("adminDetailTitle").textContent = isWorkflowEntity ? "Selected workflow" : "Selected connector";
+  $("adminSelectedHeader").innerHTML = isDetailStage && (isWorkflowEntity ? workflow : profile) ? `
     <div class="admin-selected-header">
       <div class="admin-selected-title-row">
         <div>
-          <div class="workspace-kicker">${escapeHtml(isEditMode ? "Editing connector" : "Viewing connector")}</div>
-          <h3>${escapeHtml(profile.name || profile.id || "Connector profile")}</h3>
+          <div class="workspace-kicker">${escapeHtml(isEditMode ? (isWorkflowEntity ? "Editing workflow" : "Editing connector") : (isWorkflowEntity ? "Viewing workflow" : "Viewing connector"))}</div>
+          <h3>${escapeHtml(isWorkflowEntity ? (workflow.name || workflow.id || "Workflow") : (profile.name || profile.id || "Connector profile"))}</h3>
         </div>
-        <span class="status-dot ${statusClass(profile.status)}">${escapeHtml(profile.status || "STAGED")}</span>
+        <span class="status-dot ${statusClass(isWorkflowEntity ? workflow.activationState : profile.status)}">${escapeHtml(isWorkflowEntity ? workflow.activationState || "inactive" : profile.status || "STAGED")}</span>
       </div>
-      <p>${escapeHtml(profile.summary || "Connector profile selected from the catalog.")}</p>
+      <p>${escapeHtml(isWorkflowEntity ? (workflow.summary || "Workflow selected from the catalog.") : (profile.summary || "Connector profile selected from the catalog."))}</p>
       <div class="meta-tag-row">
-        <span>${escapeHtml(profile.category || "Connector")}</span>
-        <span>${escapeHtml(mode?.label || "No runtime mode")}</span>
-        <span>${escapeHtml(profile.lifecycleState || "inactive")}</span>
-        <span>${escapeHtml(`${configuredBindingCount(profile)} configured values`)}</span>
-        <span>${escapeHtml(profile.connectorFile || "No connector file")}</span>
+        ${isWorkflowEntity ? `
+          <span>${escapeHtml(workflow.workflowFile || "No workflow file")}</span>
+          <span>${escapeHtml(workflow.activationState || "inactive")}</span>
+          <span>${escapeHtml(`Retries ${workflow.retryCount ?? 0}`)}</span>
+          <span>${escapeHtml(`Concurrency ${workflow.maxConcurrency ?? 1}`)}</span>
+        ` : `
+          <span>${escapeHtml(profile.category || "Connector")}</span>
+          <span>${escapeHtml(mode?.label || "No runtime mode")}</span>
+          <span>${escapeHtml(profile.lifecycleState || "inactive")}</span>
+          <span>${escapeHtml(`${configuredBindingCount(profile)} configured values`)}</span>
+          <span>${escapeHtml(profile.connectorFile || "No connector file")}</span>
+        `}
       </div>
     </div>
   ` : `
-    <div class="admin-empty-state">Select a connector from the catalog to review or edit its configuration.</div>
+    <div class="admin-empty-state">${isWorkflowEntity ? "Select a workflow from the catalog to review or edit its activation settings." : "Select a connector from the catalog to review or edit its configuration."}</div>
   `;
 
   $("adminConnectorLifecyclePanel").innerHTML = profile ? (isEditMode ? `
@@ -1918,6 +2026,18 @@ function renderAdmin() {
     ])}
   `) : "";
 
+  $("adminWorkflowPreview").textContent = workflow ? JSON.stringify({
+    id: workflow.id,
+    name: workflow.name,
+    workflowFile: workflow.workflowFile,
+    activationState: workflow.activationState,
+    retryCount: workflow.retryCount,
+    maxConcurrency: workflow.maxConcurrency,
+    triggerConditions: workflow.triggerConditions,
+    requiredConnectorIds: workflow.requiredConnectorIds,
+    optionalConnectorIds: workflow.optionalConnectorIds,
+  }, null, 2) : "";
+
   $("adminConfigPreview").textContent = profile ? JSON.stringify({
     id: profile.id,
     activeRuntimeMode: profile.activeRuntimeMode,
@@ -2024,6 +2144,18 @@ function bindAdminPanelEvents() {
     });
   });
 
+  $("adminConnectorsScopeButton")?.addEventListener("click", () => {
+    setAdminEntity("connectors");
+    openAdminCatalog();
+    renderAll();
+  });
+
+  $("adminWorkflowsScopeButton")?.addEventListener("click", () => {
+    setAdminEntity("workflows");
+    openAdminCatalog();
+    renderAll();
+  });
+
   $("adminViewModeButton")?.addEventListener("click", () => {
     setAdminMode("view");
     renderAll();
@@ -2037,7 +2169,15 @@ function bindAdminPanelEvents() {
   Array.from($("adminConnectorCatalog").querySelectorAll?.("[data-admin-select-connector]") || []).forEach((button) => {
     button.addEventListener("click", () => {
       activeSourceId = button.dataset.adminSelectConnector;
-      openAdminDetail({ mode: "view" });
+      openAdminDetail({ entity: "connectors", mode: "view" });
+      renderAll();
+    });
+  });
+
+  Array.from($("adminConnectorCatalog").querySelectorAll?.("[data-admin-select-workflow]") || []).forEach((button) => {
+    button.addEventListener("click", () => {
+      activeAdminWorkflowId = button.dataset.adminSelectWorkflow;
+      openAdminDetail({ entity: "workflows", mode: "view" });
       renderAll();
     });
   });
@@ -2454,14 +2594,16 @@ $("resetConnectorButton").addEventListener("click", () => {
 });
 
 $("createConnectorProfileButton").addEventListener("click", () => {
-  openAdminDetail({ mode: "edit" });
+  setAdminEntity("connectors");
+  openAdminDetail({ entity: "connectors", mode: "edit" });
   createConnectorProfileFromTemplate("enterprise-template");
   setView("admin");
   renderAll();
 });
 
 $("duplicateConnectorProfileButton").addEventListener("click", () => {
-  openAdminDetail({ mode: "edit" });
+  setAdminEntity("connectors");
+  openAdminDetail({ entity: "connectors", mode: "edit" });
   createConnectorProfileFromTemplate(activeSourceId, {
     name: `Copy of ${activeAdminProfile()?.name || "Connector"}`,
   });
@@ -2480,13 +2622,15 @@ $("openSetupAdminButton").addEventListener("click", () => {
   if (!connectorProfile(activeSourceId)) {
     createConnectorProfileForSource(activeSource());
   }
-  openAdminDetail({ mode: "edit" });
+  setAdminEntity("connectors");
+  openAdminDetail({ entity: "connectors", mode: "edit" });
   setView("admin");
   renderAll();
 });
 
 $("createSetupConfigButton").addEventListener("click", () => {
-  openAdminDetail({ mode: "edit" });
+  setAdminEntity("connectors");
+  openAdminDetail({ entity: "connectors", mode: "edit" });
   createConnectorProfileForSource(activeSource());
   setView("admin");
   renderAll();
@@ -2498,7 +2642,11 @@ $("backToConnectorCatalogButton").addEventListener("click", () => {
 });
 
 $("cancelConnectorChangesButton").addEventListener("click", () => {
-  cancelConnectorChanges(activeSourceId);
+  if (adminEntity === "workflows") {
+    cancelWorkflowChanges(activeAdminWorkflowId);
+  } else {
+    cancelConnectorChanges(activeSourceId);
+  }
   openAdminCatalog();
   renderAll();
 });
