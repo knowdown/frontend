@@ -13,8 +13,21 @@ const onboardingWorkflow = data.onboardingWorkflow || [];
 const adminConsole = data.adminConsole || {};
 const baseConnectorProfiles = adminConsole.connectorProfiles || [];
 const githubPersistenceDefaults = data.githubPersistenceDefaults || {};
+const baseWorkflowProfiles = workTypes.map((flow) => ({
+  id: flow.id,
+  name: flow.name,
+  workflowFile: flow.workflowAdmin?.workflowFile || `.github/workflows/${flow.id}.yml`,
+  activationState: flow.workflowAdmin?.activationState || (flow.status === "LIVE" ? "active" : "inactive"),
+  retryCount: flow.workflowAdmin?.retryCount ?? 1,
+  maxConcurrency: flow.workflowAdmin?.maxConcurrency ?? 1,
+  triggerConditions: flow.workflowAdmin?.triggerConditions || (flow.routingSignals || []).join(", "),
+  requiredConnectorIds: flow.workflowAdmin?.requiredConnectorIds || flow.connectorIds || [],
+  optionalConnectorIds: flow.workflowAdmin?.optionalConnectorIds || [],
+  summary: flow.summary || "",
+}));
 
 const ADMIN_STORAGE_KEY = "knockdown.admin.connectorProfiles.v1";
+const WORKFLOW_STORAGE_KEY = "knockdown.admin.workflowProfiles.v1";
 const GITHUB_PERSISTENCE_STORAGE_KEY = "knockdown.admin.githubPersistence.v1";
 const GITHUB_API_VERSION = "2022-11-28";
 
@@ -41,9 +54,11 @@ let searchTerm = "";
 let adminMode = "view";
 let adminStage = "catalog";
 let adminCatalogSearchTerm = "";
+let activeAdminWorkflowId = workTypes[0]?.id || "";
 let adminCatalogFilter = "all";
 let adminCreatedProfileIds = new Set();
 let connectorProfilesState = hydrateConnectorProfiles(baseConnectorProfiles, loadAdminOverrides());
+let workflowProfilesState = hydrateWorkflowProfiles(baseWorkflowProfiles, loadWorkflowOverrides());
 let githubPersistenceState = hydrateGithubPersistence(loadGithubPersistence());
 let persistenceStatus = {
   tone: "pending",
@@ -101,6 +116,26 @@ function clearAdminOverrides() {
   window.localStorage.removeItem(ADMIN_STORAGE_KEY);
 }
 
+function loadWorkflowOverrides() {
+  if (!storageAvailable()) return null;
+  try {
+    const value = window.localStorage.getItem(WORKFLOW_STORAGE_KEY);
+    return value ? JSON.parse(value) : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function saveWorkflowOverrides() {
+  if (!storageAvailable()) return;
+  window.localStorage.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify(workflowProfilesState));
+}
+
+function clearWorkflowOverrides() {
+  if (!storageAvailable()) return;
+  window.localStorage.removeItem(WORKFLOW_STORAGE_KEY);
+}
+
 function loadGithubPersistence() {
   if (!storageAvailable()) return null;
   try {
@@ -151,6 +186,16 @@ function hydrateConnectorProfiles(baseProfiles, overrides) {
   });
 }
 
+function hydrateWorkflowProfiles(baseProfiles, overrides) {
+  const base = deepClone(baseProfiles);
+  if (!Array.isArray(overrides) || !overrides.length) return base;
+  const byId = new Map(overrides.map((profile) => [profile.id, profile]));
+  return base.map((profile) => {
+    const override = byId.get(profile.id);
+    return override ? deepMerge(profile, override) : profile;
+  });
+}
+
 function resetConnectorProfile(connectorId) {
   const base = baseConnectorProfiles.find((profile) => profile.id === connectorId);
   if (!base) return;
@@ -165,6 +210,11 @@ function resetAllConnectorProfiles() {
   clearAdminOverrides();
 }
 
+function resetAllWorkflowProfiles() {
+  workflowProfilesState = deepClone(baseWorkflowProfiles);
+  clearWorkflowOverrides();
+}
+
 function updateConnectorProfile(connectorId, transform) {
   connectorProfilesState = connectorProfilesState.map((profile) => {
     if (profile.id !== connectorId) return profile;
@@ -174,15 +224,25 @@ function updateConnectorProfile(connectorId, transform) {
   saveAdminOverrides();
 }
 
+function updateWorkflowProfile(workflowId, transform) {
+  workflowProfilesState = workflowProfilesState.map((profile) => {
+    if (profile.id !== workflowId) return profile;
+    const nextProfile = transform(deepClone(profile));
+    return nextProfile || profile;
+  });
+  saveWorkflowOverrides();
+}
+
 function upsertConnectorDescriptorFromProfile(profile) {
   const existing = connectors.find((connector) => connector.id === profile.id);
   const descriptor = {
     id: profile.id,
     name: profile.name || profile.displayName || profile.id,
     status: profile.status || "STAGED",
+    lifecycleState: profile.lifecycleState || "inactive",
     mode: profile.category || "Custom connector",
     detail: profile.summary || "Customer-managed connector configuration.",
-    meta: `Config: ${profile.connectorFile || "pending"} • Source: ${profile.sourceConfig || "pending"} • Policy: ${profile.writePolicy?.approvalPosture || "review before publish"}`,
+    meta: `Config: ${profile.connectorFile || "pending"} • Source: ${profile.sourceConfig || "pending"} • State: ${profile.lifecycleState || "inactive"} • Policy: ${profile.writePolicy?.approvalPosture || "review before publish"}`,
     health: existing?.health || "Draft",
     latency: existing?.latency || "N/A",
     capabilities: existing?.capabilities || ["Custom source reads", "Custom writeback"],
@@ -220,6 +280,7 @@ function createConnectorProfileFromTemplate(sourceProfileId = "enterprise-templa
   nextProfile.id = nextId;
   nextProfile.name = nextName;
   nextProfile.status = "STAGED";
+  nextProfile.lifecycleState = "inactive";
   nextProfile.summary = options.summary || "New connector config. Update the source contract, runtime mode, bindings, and writeback policy before publishing.";
   nextProfile.category = options.category || "Customer-editable connector";
   nextProfile.connectorFile = `config/connectors/${nextId}.json`;
@@ -334,6 +395,14 @@ function setAdminMode(mode) {
   adminMode = mode === "edit" ? "edit" : "view";
 }
 
+function workflowProfile(id) {
+  return workflowProfilesState.find((item) => item.id === id) || null;
+}
+
+function activeAdminWorkflow() {
+  return workflowProfile(activeAdminWorkflowId) || workflowProfile(activeFlowId) || workflowProfilesState[0] || null;
+}
+
 function setAdminStage(stage) {
   adminStage = stage === "detail" ? "detail" : "catalog";
 }
@@ -386,6 +455,71 @@ function renderGuideRows(rows) {
       <strong>${escapeHtml(value)}</strong>
     </div>
   `).join("");
+}
+
+function connectorLifecycleState(profile = activeAdminProfile()) {
+  return profile?.lifecycleState || "inactive";
+}
+
+function connectorValidationSummary(profile = activeAdminProfile()) {
+  const envCount = currentEnvBindings(profile).length;
+  const secretCount = currentSecretBindings(profile).length;
+  const totalBindings = envCount + secretCount;
+  const configuredCount = configuredBindingCount(profile);
+  if (!profile) {
+    return {
+      ready: false,
+      status: "inactive",
+      detail: "No connector selected.",
+    };
+  }
+  if (totalBindings === 0) {
+    return {
+      ready: true,
+      status: connectorLifecycleState(profile),
+      detail: "No runtime bindings are modeled for the active runtime mode.",
+    };
+  }
+  if (configuredCount < totalBindings) {
+    return {
+      ready: false,
+      status: "inactive",
+      detail: `${configuredCount} of ${totalBindings} required bindings are configured.`,
+    };
+  }
+  return {
+    ready: true,
+    status: connectorLifecycleState(profile) === "active" ? "active" : "validated",
+    detail: `${configuredCount} of ${totalBindings} required bindings are configured.`,
+  };
+}
+
+function workflowConnectorReadiness(workflow = activeAdminWorkflow()) {
+  const required = (workflow?.requiredConnectorIds || []).map((connectorId) => {
+    const profile = connectorProfile(connectorId);
+    return {
+      id: connectorId,
+      name: profile?.name || connectors.find((item) => item.id === connectorId)?.name || connectorId,
+      state: connectorLifecycleState(profile),
+      ready: ["validated", "active"].includes(connectorLifecycleState(profile)),
+    };
+  });
+  const optional = (workflow?.optionalConnectorIds || []).map((connectorId) => {
+    const profile = connectorProfile(connectorId);
+    return {
+      id: connectorId,
+      name: profile?.name || connectors.find((item) => item.id === connectorId)?.name || connectorId,
+      state: connectorLifecycleState(profile),
+      ready: ["validated", "active"].includes(connectorLifecycleState(profile)),
+    };
+  });
+  const missingRequired = required.filter((item) => !item.ready);
+  return {
+    required,
+    optional,
+    missingRequired,
+    canActivate: missingRequired.length === 0,
+  };
 }
 
 function activeRun() {
@@ -461,6 +595,7 @@ function ensureSourceForFlow(flow = activeFlow(), preferRecommended = false) {
 
 function setFlow(flowId, options = {}) {
   activeFlowId = flowId;
+  activeAdminWorkflowId = flowId;
   ensureSourceForFlow(activeFlow(), Boolean(options.preferRecommended));
 }
 
@@ -530,8 +665,8 @@ function renderHeader() {
     const flow = activeFlow();
     const source = activeSource();
     const sourceRole = isPrimarySource(source, flow) ? "Primary source" : sourceSupportedByFlow(source, flow) ? "Supporting connector" : "Not mapped to this flow";
-    $("workspaceKicker").textContent = "New setup";
-    $("chatTitle").textContent = "What do you want Knockdown to handle?";
+    $("workspaceKicker").textContent = "Playground";
+    $("chatTitle").textContent = "Playground";
     $("chatMeta").innerHTML = [
       `Source: ${escapeHtml(source?.name || "Choose one")}`,
       `Flow: ${escapeHtml(flow?.name || "Choose one")}`,
@@ -671,8 +806,8 @@ function renderSetup() {
 
   renderSelects();
 
-  $("newRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run setup dry-run";
-  $("launchRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run setup dry-run";
+  $("newRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run Playground dry-run";
+  $("launchRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run Playground dry-run";
   $("setupSelectionHint").textContent = `${setupHint(flow, source, recommendedSource)} ${configDecision}`;
   $("setupStateBanner").innerHTML = `
     <strong>${escapeHtml(flow?.name || "Choose a workload")} with ${escapeHtml(source?.name || "a source")}</strong><br>
@@ -1159,6 +1294,7 @@ async function getRepoContent(path) {
 function buildPersistedConnectorConfig(profile, existingConfig) {
   const nextConfig = deepClone(existingConfig);
   nextConfig.displayName = profile.name || nextConfig.displayName;
+  nextConfig.operationalState = profile.lifecycleState || nextConfig.operationalState;
   nextConfig.writePolicy = {
     ...(nextConfig.writePolicy || {}),
     ...(profile.writePolicy || {}),
@@ -1323,6 +1459,9 @@ function renderAdmin() {
   const envBindings = currentEnvBindings(profile);
   const secretBindings = currentSecretBindings(profile);
   const secretNotes = currentSecretNotes(profile);
+  const connectorValidation = connectorValidationSummary(profile);
+  const workflow = activeAdminWorkflow();
+  const workflowReadiness = workflowConnectorReadiness(workflow);
   const isEditMode = adminMode === "edit";
   const isDetailStage = adminStage === "detail";
 
@@ -1366,6 +1505,7 @@ function renderAdmin() {
     profile?.connectorFile ? `Profile: ${profile.connectorFile}` : "",
     profile?.sourceConfig ? `Source config: ${profile.sourceConfig}` : "",
     mode?.label ? `Mode: ${mode.label}` : "",
+    profile?.lifecycleState ? `Connector state: ${profile.lifecycleState}` : "",
   ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
 
   $("adminConnectorCatalog").innerHTML = visibleCatalogProfiles
@@ -1378,6 +1518,7 @@ function renderAdmin() {
         <p>${escapeHtml(item.summary)}</p>
         <div class="meta-tag-row">
           <span>${escapeHtml(currentRuntimeMode(item)?.label || "No mode")}</span>
+          <span>${escapeHtml(item.lifecycleState || "inactive")}</span>
           <span>${escapeHtml(`${configuredBindingCount(item)} configured`)}</span>
         </div>
       </button>
@@ -1410,6 +1551,10 @@ function renderAdmin() {
       <span>Configured values</span>
       <strong>${escapeHtml(`${configuredBindingCount(profile)} local entries`)}</strong>
     </div>
+    <div class="summary-row">
+      <span>Connector state</span>
+      <strong>${escapeHtml(profile.lifecycleState || "inactive")}</strong>
+    </div>
     <div class="meta-tag-row">
       ${(profile.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
     </div>
@@ -1428,6 +1573,7 @@ function renderAdmin() {
       <div class="meta-tag-row">
         <span>${escapeHtml(profile.category || "Connector")}</span>
         <span>${escapeHtml(mode?.label || "No runtime mode")}</span>
+        <span>${escapeHtml(profile.lifecycleState || "inactive")}</span>
         <span>${escapeHtml(`${configuredBindingCount(profile)} configured values`)}</span>
         <span>${escapeHtml(profile.connectorFile || "No connector file")}</span>
       </div>
@@ -1435,6 +1581,31 @@ function renderAdmin() {
   ` : `
     <div class="admin-empty-state">Select a connector from the catalog to review or edit its configuration.</div>
   `;
+
+  $("adminConnectorLifecyclePanel").innerHTML = profile ? (isEditMode ? `
+    <div class="admin-form-grid">
+      <div class="admin-form-field">
+        <label>Connector state</label>
+        <input type="text" value="${escapeHtml(profile.lifecycleState || "inactive")}" readonly>
+      </div>
+      <div class="admin-form-field">
+        <label>Validation readiness</label>
+        <input type="text" value="${escapeHtml(connectorValidation.detail)}" readonly>
+      </div>
+    </div>
+    <div class="persistence-actions">
+      <button class="ghost-button" type="button" id="validateConnectorButton">Validate connector</button>
+      <button class="ghost-button" type="button" id="activateConnectorButton">Activate connector</button>
+      <button class="ghost-button" type="button" id="deactivateConnectorButton">Set inactive</button>
+    </div>
+    <div class="persistence-callout">
+      Validate checks the active runtime mode and required bindings. Activation is allowed only after the connector is validated. Save the connector config to GitHub after state changes if you want to persist them outside this browser.
+    </div>
+  ` : renderGuideRows([
+    ["Connector state", profile.lifecycleState || "inactive"],
+    ["Validation readiness", connectorValidation.detail],
+    ["Recommended next step", connectorValidation.ready ? "Connector can be validated or activated." : "Finish binding values before validation."],
+  ])) : "";
 
   $("adminBasicsPanel").innerHTML = profile ? (isEditMode ? `
     <div class="admin-form-grid">
@@ -1687,9 +1858,70 @@ function renderAdmin() {
     ])}
   `) : "";
 
+  $("adminWorkflowPanel").innerHTML = workflow ? (isEditMode ? `
+    <div class="admin-form-grid">
+      <div class="admin-form-field">
+        <label for="adminWorkflowSelect">Workflow</label>
+        <select id="adminWorkflowSelect" data-admin-workflow-select>
+          ${workflowProfilesState.map((item) => `
+            <option value="${escapeHtml(item.id)}"${item.id === workflow.id ? " selected" : ""}>${escapeHtml(item.name)}</option>
+          `).join("")}
+        </select>
+      </div>
+      <div class="admin-form-field">
+        <label>Activation state</label>
+        <input type="text" value="${escapeHtml(workflow.activationState || "inactive")}" readonly>
+      </div>
+      <div class="admin-form-field">
+        <label for="adminWorkflowFile">Workflow file</label>
+        <input id="adminWorkflowFile" type="text" value="${escapeHtml(workflow.workflowFile || "")}" data-admin-workflow-field="workflowFile">
+      </div>
+      <div class="admin-form-field">
+        <label for="adminWorkflowRetryCount">Retry count</label>
+        <input id="adminWorkflowRetryCount" type="number" min="0" value="${escapeHtml(workflow.retryCount ?? 0)}" data-admin-workflow-field="retryCount">
+      </div>
+      <div class="admin-form-field">
+        <label for="adminWorkflowConcurrency">Max concurrency</label>
+        <input id="adminWorkflowConcurrency" type="number" min="1" value="${escapeHtml(workflow.maxConcurrency ?? 1)}" data-admin-workflow-field="maxConcurrency">
+      </div>
+      <div class="admin-form-field span-2">
+        <label for="adminWorkflowTriggers">Trigger conditions</label>
+        <textarea id="adminWorkflowTriggers" data-admin-workflow-field="triggerConditions">${escapeHtml(workflow.triggerConditions || "")}</textarea>
+      </div>
+    </div>
+    <div class="guide-panel">
+      <h3>Connector readiness for activation</h3>
+      ${renderGuideRows([
+        ["Required connectors", formatListValue(workflowReadiness.required.map((item) => `${item.name} (${item.state})`))],
+        ["Optional connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
+        ["Activation gate", workflowReadiness.canActivate ? "All required connectors are validated or active." : `Blocked until validated: ${workflowReadiness.missingRequired.map((item) => item.name).join(", ")}`],
+      ])}
+    </div>
+    <div class="persistence-actions">
+      <button class="ghost-button" type="button" id="activateWorkflowButton">Activate workflow</button>
+      <button class="ghost-button" type="button" id="deactivateWorkflowButton">Deactivate workflow</button>
+    </div>
+    <div class="persistence-callout">
+      Workflow activation requires every required connector to be in a validated or active state. The values above model workflow-level YAML concerns such as retry count, trigger conditions, and concurrency.
+    </div>
+  ` : `
+    ${renderGuideRows([
+      ["Workflow", workflow.name || workflow.id],
+      ["Activation state", workflow.activationState || "inactive"],
+      ["Workflow file", workflow.workflowFile || "Not set"],
+      ["Retry count", String(workflow.retryCount ?? 0)],
+      ["Max concurrency", String(workflow.maxConcurrency ?? 1)],
+      ["Trigger conditions", workflow.triggerConditions || "Not set"],
+      ["Required connectors", formatListValue(workflowReadiness.required.map((item) => `${item.name} (${item.state})`))],
+      ["Optional connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
+      ["Activation gate", workflowReadiness.canActivate ? "Ready to activate." : `Blocked until validated: ${workflowReadiness.missingRequired.map((item) => item.name).join(", ")}`],
+    ])}
+  `) : "";
+
   $("adminConfigPreview").textContent = profile ? JSON.stringify({
     id: profile.id,
     activeRuntimeMode: profile.activeRuntimeMode,
+    lifecycleState: profile.lifecycleState,
     runtimeMode: mode,
     mcpFabric: profile.mcpFabric,
     toolMappings: profile.toolMappings,
@@ -1699,6 +1931,16 @@ function renderAdmin() {
       value: binding.value ? "********" : "",
     })),
     writePolicy: profile.writePolicy,
+    workflow: workflow ? {
+      id: workflow.id,
+      workflowFile: workflow.workflowFile,
+      activationState: workflow.activationState,
+      retryCount: workflow.retryCount,
+      maxConcurrency: workflow.maxConcurrency,
+      triggerConditions: workflow.triggerConditions,
+      requiredConnectorIds: workflow.requiredConnectorIds,
+      optionalConnectorIds: workflow.optionalConnectorIds,
+    } : null,
   }, null, 2) : "";
 
   $("adminPersistencePanel").innerHTML = profile ? (isEditMode ? `
@@ -1825,6 +2067,60 @@ function bindAdminPanelEvents() {
     });
   });
 
+  const validateConnectorButton = $("validateConnectorButton");
+  if (validateConnectorButton) {
+    validateConnectorButton.addEventListener("click", () => {
+      const summary = connectorValidationSummary(activeAdminProfile());
+      if (!summary.ready) {
+        setPersistenceStatus("error", `Connector validation failed: ${summary.detail}`);
+        renderAll();
+        return;
+      }
+      updateConnectorProfile(activeSourceId, (currentProfile) => {
+        currentProfile.lifecycleState = "validated";
+        return currentProfile;
+      });
+      const updated = connectorProfile(activeSourceId);
+      if (updated) upsertConnectorDescriptorFromProfile(updated);
+      setPersistenceStatus("success", "Connector validated locally. Save the connector config to GitHub to persist the state.");
+      renderAll();
+    });
+  }
+
+  const activateConnectorButton = $("activateConnectorButton");
+  if (activateConnectorButton) {
+    activateConnectorButton.addEventListener("click", () => {
+      const currentProfile = connectorProfile(activeSourceId);
+      if (!currentProfile || !["validated", "active"].includes(connectorLifecycleState(currentProfile))) {
+        setPersistenceStatus("error", "Validate the connector before activating it.");
+        renderAll();
+        return;
+      }
+      updateConnectorProfile(activeSourceId, (profileValue) => {
+        profileValue.lifecycleState = "active";
+        return profileValue;
+      });
+      const updated = connectorProfile(activeSourceId);
+      if (updated) upsertConnectorDescriptorFromProfile(updated);
+      setPersistenceStatus("success", "Connector activated locally. Save the connector config to GitHub to persist the state.");
+      renderAll();
+    });
+  }
+
+  const deactivateConnectorButton = $("deactivateConnectorButton");
+  if (deactivateConnectorButton) {
+    deactivateConnectorButton.addEventListener("click", () => {
+      updateConnectorProfile(activeSourceId, (currentProfile) => {
+        currentProfile.lifecycleState = "inactive";
+        return currentProfile;
+      });
+      const updated = connectorProfile(activeSourceId);
+      if (updated) upsertConnectorDescriptorFromProfile(updated);
+      setPersistenceStatus("pending", "Connector set to inactive locally.");
+      renderAll();
+    });
+  }
+
   Array.from($("adminRuntimePanel").querySelectorAll?.("[data-admin-mode-field]") || []).forEach((input) => {
     const handler = () => {
       updateConnectorProfile(activeSourceId, (profile) => {
@@ -1919,6 +2215,60 @@ function bindAdminPanelEvents() {
       renderAll();
     });
   });
+
+  const workflowSelect = $("adminWorkflowSelect");
+  if (workflowSelect) {
+    workflowSelect.addEventListener("change", (event) => {
+      activeAdminWorkflowId = event.target.value;
+      renderAll();
+    });
+  }
+
+  Array.from($("adminWorkflowPanel").querySelectorAll?.("[data-admin-workflow-field]") || []).forEach((input) => {
+    input.addEventListener("change", () => {
+      const field = input.dataset.adminWorkflowField;
+      updateWorkflowProfile(activeAdminWorkflowId, (currentWorkflow) => {
+        if (field === "retryCount" || field === "maxConcurrency") {
+          currentWorkflow[field] = Number(input.value || 0);
+        } else {
+          currentWorkflow[field] = input.value;
+        }
+        return currentWorkflow;
+      });
+      setPersistenceStatus("pending", "Workflow settings updated locally. Use Activate workflow when the required connectors are ready.");
+      renderAll();
+    });
+  });
+
+  const activateWorkflowButton = $("activateWorkflowButton");
+  if (activateWorkflowButton) {
+    activateWorkflowButton.addEventListener("click", () => {
+      const readiness = workflowConnectorReadiness(activeAdminWorkflow());
+      if (!readiness.canActivate) {
+        setPersistenceStatus("error", `Workflow activation blocked until these connectors are validated: ${readiness.missingRequired.map((item) => item.name).join(", ")}`);
+        renderAll();
+        return;
+      }
+      updateWorkflowProfile(activeAdminWorkflowId, (currentWorkflow) => {
+        currentWorkflow.activationState = "active";
+        return currentWorkflow;
+      });
+      setPersistenceStatus("success", "Workflow activated locally. Save the related workflow file changes through your control-plane persistence path when ready.");
+      renderAll();
+    });
+  }
+
+  const deactivateWorkflowButton = $("deactivateWorkflowButton");
+  if (deactivateWorkflowButton) {
+    deactivateWorkflowButton.addEventListener("click", () => {
+      updateWorkflowProfile(activeAdminWorkflowId, (currentWorkflow) => {
+        currentWorkflow.activationState = "inactive";
+        return currentWorkflow;
+      });
+      setPersistenceStatus("pending", "Workflow deactivated locally.");
+      renderAll();
+    });
+  }
 
   Array.from($("adminPersistencePanel").querySelectorAll?.("[data-persist-setting]") || []).forEach((input) => {
     input.addEventListener("change", () => {
@@ -2121,6 +2471,7 @@ $("duplicateConnectorProfileButton").addEventListener("click", () => {
 
 $("resetAllAdminButton").addEventListener("click", () => {
   resetAllConnectorProfiles();
+  resetAllWorkflowProfiles();
   adminCreatedProfileIds = new Set();
   renderAll();
 });

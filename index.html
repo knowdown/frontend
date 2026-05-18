@@ -23,7 +23,7 @@
 
       <button class="primary-nav active" id="setupTab" data-view="setup" type="button">
         <span class="nav-icon">+</span>
-        <span>New setup</span>
+        <span>Playground</span>
       </button>
       <button class="primary-nav" id="runsTab" data-view="runs" type="button">
         <span class="nav-icon">▶</span>
@@ -66,7 +66,7 @@
           <input type="text" placeholder="Search templates, sources, or runs" aria-label="Global search">
         </div>
         <div class="topbar-actions">
-          <button class="ghost-button" id="setupShortcut" type="button">Setup</button>
+          <button class="ghost-button" id="setupShortcut" type="button">Playground</button>
           <button class="ghost-button" id="runsShortcut" type="button">Runs</button>
           <button class="ghost-button" id="monitorShortcut" type="button">Monitor</button>
           <button class="ghost-button" id="adminShortcut" type="button">Admin</button>
@@ -81,8 +81,8 @@
 
       <section class="workspace-panel" id="setupPanel">
         <section class="setup-hero">
-          <div class="workspace-kicker" id="workspaceKicker">Start here</div>
-          <h1 id="chatTitle">Set up a workload</h1>
+          <div class="workspace-kicker" id="workspaceKicker">Playground</div>
+          <h1 id="chatTitle">Playground</h1>
           <div class="workspace-meta" id="chatMeta"></div>
 
           <div class="prompt-box">
@@ -94,7 +94,7 @@
               <span>Source of record</span>
               <select id="sourceSelect"></select>
             </label>
-            <button class="accent-button large" id="newRunButton" type="button">Run setup dry-run</button>
+            <button class="accent-button large" id="newRunButton" type="button">Run Playground dry-run</button>
           </div>
           <div class="selection-hint" id="setupSelectionHint"></div>
         </section>
@@ -298,6 +298,10 @@
 
             <div class="admin-layout">
               <section class="plain-panel span-2">
+                <h2>Connector lifecycle</h2>
+                <div id="adminConnectorLifecyclePanel"></div>
+              </section>
+              <section class="plain-panel span-2">
                 <h2>Connector basics</h2>
                 <div id="adminBasicsPanel"></div>
               </section>
@@ -316,6 +320,10 @@
               <section class="plain-panel">
                 <h2>Writeback policy</h2>
                 <div id="adminPolicy"></div>
+              </section>
+              <section class="plain-panel span-2">
+                <h2>Workflow activation</h2>
+                <div id="adminWorkflowPanel"></div>
               </section>
               <section class="plain-panel span-2">
                 <h2>GitHub persistence</h2>

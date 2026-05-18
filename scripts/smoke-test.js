@@ -161,11 +161,13 @@ const createById = (id, tagName = "div") => {
   "adminSelectedHeader",
   "adminConnectorCatalog",
   "adminSummary",
+  "adminConnectorLifecyclePanel",
   "adminBasicsPanel",
   "adminRuntimePanel",
   "adminToolMappings",
   "adminBindings",
   "adminPolicy",
+  "adminWorkflowPanel",
   "adminPersistencePanel",
   "adminConfigPreview",
   "composerInput",
@@ -190,6 +192,11 @@ const createById = (id, tagName = "div") => {
   "duplicateConnectorProfileButton",
   "resetConnectorButton",
   "resetAllAdminButton",
+  "validateConnectorButton",
+  "activateConnectorButton",
+  "deactivateConnectorButton",
+  "activateWorkflowButton",
+  "deactivateWorkflowButton",
   "historyPanel",
   "connectorPanel",
   "setupPanel",
@@ -301,7 +308,7 @@ function assert(condition, message) {
 }
 
 assert(elements.get("setupPanel").hidden === false, "Setup should be the default view");
-assert(elements.get("chatTitle").textContent.includes("What do you want Knockdown to handle"), "Header should explain the setup-first experience");
+assert(elements.get("chatTitle").textContent.includes("Playground"), "Header should reflect the renamed playground experience");
 assert(elements.get("sourceSelect").innerHTML.includes("ServiceNow"), "Source selector should render");
 assert(elements.get("flowSelect").innerHTML.includes("Defect Delivery"), "Flow selector should render");
 assert(elements.get("workTypeRegistry").children.length >= 1, "Flow templates should render");
@@ -369,7 +376,9 @@ assert(elements.get("adminPanel").hidden === false, "Creating a setup config sho
 assert(elements.get("adminCatalogPanel").hidden === true, "Catalog should hide while a selected connector is open");
 assert(elements.get("adminDetailStage").hidden === false, "Detail workspace should open for the selected connector");
 assert(elements.get("adminSelectedHeader").innerHTML.includes("Playwright"), "Selected connector workspace should show the active connector");
+assert(elements.get("adminConnectorLifecyclePanel").innerHTML.includes("Connector state"), "Admin should show connector lifecycle controls");
 assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin should open on the newly created source config");
+assert(elements.get("adminWorkflowPanel").innerHTML.includes("Workflow"), "Admin should show workflow activation controls");
 assert(elements.get("adminEditModeButton").className.includes("active"), "Setup-driven admin opening should land in edit mode");
 assert(elements.get("adminEditActions").hidden === false, "Edit actions should be visible in edit mode");
 assert(elements.get("setupConfigStatus").innerHTML.includes("Connector config"), "Setup config status should stay renderable after creating a config");
