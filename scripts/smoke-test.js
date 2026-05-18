@@ -151,6 +151,7 @@ const createById = (id, tagName = "div") => {
   "adminEditModeButton",
   "adminCatalogActions",
   "adminDetailActions",
+  "saveAdminChangesButton",
   "adminEditActions",
   "adminBannerCopy",
   "adminShell",
@@ -411,11 +412,14 @@ assert(elements.get("adminBasicsPanel").innerHTML.includes("Playwright"), "Admin
 assert(elements.get("adminWorkflowDetailSections").hidden === true, "Workflow sections should stay hidden while editing a connector");
 assert(elements.get("adminEditModeButton").className.includes("active"), "Setup-driven admin opening should land in edit mode");
 assert(elements.get("adminEditActions").hidden === false, "Edit actions should be visible in edit mode");
+assert(elements.get("saveAdminChangesButton").hidden === false, "Edit mode should show an explicit save action");
 assert(elements.get("setupConfigStatus").innerHTML.includes("Connector config"), "Setup config status should stay renderable after creating a config");
 
-elements.get("adminViewModeButton").click();
-assert(elements.get("adminViewModeButton").className.includes("active"), "Admin should switch back to read-only mode");
+elements.get("saveAdminChangesButton").click();
+assert(elements.get("adminViewModeButton").className.includes("active"), "Saving should switch Admin back to read-only mode");
+assert(elements.get("saveAdminChangesButton").hidden === true, "Save action should hide in read-only mode");
 assert(elements.get("adminEditActions").hidden === true, "Edit actions should hide in read-only mode");
+assert(elements.get("adminBannerCopy").textContent.includes("Read-only mode"), "Read-only banner should return after saving");
 assert(elements.get("adminPersistencePanel").innerHTML.includes("Switch to"), "Read-only mode should explain how to edit persistence settings");
 
 elements.get("backToConnectorCatalogButton").click();

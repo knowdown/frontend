@@ -1499,6 +1499,7 @@ function renderAdmin() {
   $("adminWorkflowDetailSections").hidden = !isWorkflowEntity || !isDetailStage;
   $("createConnectorProfileButton").hidden = isWorkflowEntity;
   $("backToConnectorCatalogButton").textContent = isWorkflowEntity ? "Back to workflows" : "Back to connectors";
+  $("saveAdminChangesButton").hidden = !isEditMode || !isDetailStage;
 
   $("adminConnectorsScopeButton").classList.toggle("active", !isWorkflowEntity);
   $("adminWorkflowsScopeButton").classList.toggle("active", isWorkflowEntity);
@@ -2638,6 +2639,17 @@ $("createSetupConfigButton").addEventListener("click", () => {
 
 $("backToConnectorCatalogButton").addEventListener("click", () => {
   openAdminCatalog();
+  renderAll();
+});
+
+$("saveAdminChangesButton").addEventListener("click", () => {
+  setAdminMode("view");
+  setPersistenceStatus(
+    "success",
+    adminEntity === "workflows"
+      ? "Workflow changes saved locally. You are now back in read-only mode."
+      : "Connector changes saved locally. You are now back in read-only mode."
+  );
   renderAll();
 });
 
