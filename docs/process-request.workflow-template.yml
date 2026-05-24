@@ -1,0 +1,132 @@
+name: Process Request
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        required: true
+        type: string
+      state_path:
+        required: true
+        type: string
+      input_path:
+        required: true
+        type: string
+      result_path:
+        required: true
+        type: string
+      operation:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Mark running
+        shell: bash
+        run: |
+          mkdir -p "$(dirname "${{ inputs.state_path }}")/events"
+
+          jq '
+            .status = "running" |
+            .step = "started" |
+            .progress = 10 |
+            .message = "GitHub Action started" |
+            .version = (.version + 1) |
+            .updatedAt = now | strftime("%Y-%m-%dT%H:%M:%SZ")
+          ' "${{ inputs.state_path }}" > /tmp/state.json
+
+          mv /tmp/state.json "${{ inputs.state_path }}"
+
+          cat > "$(dirname "${{ inputs.state_path }}")/events/0003-running.json" <<EOF
+          {
+            "requestId": "${{ inputs.request_id }}",
+            "eventType": "running",
+            "status": "running",
+            "step": "started",
+            "progress": 10,
+            "message": "GitHub Action started",
+            "version": 3,
+            "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          git add "${{ inputs.state_path }}" "$(dirname "${{ inputs.state_path }}")/events/0003-running.json"
+          git commit -m "Mark ${{ inputs.request_id }} running"
+          git push
+
+      - name: Process request
+        shell: bash
+        run: |
+          echo "Processing operation: ${{ inputs.operation }}"
+          cat "${{ inputs.input_path }}"
+
+          cat > "${{ inputs.result_path }}" <<EOF
+          {
+            "requestId": "${{ inputs.request_id }}",
+            "summary": "Processing completed successfully",
+            "data": {
+              "recordsProcessed": 120,
+              "warnings": []
+            }
+          }
+          EOF
+
+      - name: Mark processed
+        shell: bash
+        run: |
+          jq '
+            .status = "processed" |
+            .step = "completed" |
+            .progress = 100 |
+            .message = "Request processed successfully" |
+            .version = (.version + 1) |
+            .updatedAt = now | strftime("%Y-%m-%dT%H:%M:%SZ")
+          ' "${{ inputs.state_path }}" > /tmp/state.json
+
+          mv /tmp/state.json "${{ inputs.state_path }}"
+
+          cat > "$(dirname "${{ inputs.state_path }}")/events/0004-processed.json" <<EOF
+          {
+            "requestId": "${{ inputs.request_id }}",
+            "eventType": "processed",
+            "status": "processed",
+            "step": "completed",
+            "progress": 100,
+            "message": "Request processed successfully",
+            "version": 4,
+            "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          git add "${{ inputs.state_path }}" "${{ inputs.result_path }}" "$(dirname "${{ inputs.state_path }}")/events/0004-processed.json"
+          git commit -m "Mark ${{ inputs.request_id }} processed"
+          git push
+
+      - name: Notify Cloudflare
+        if: always()
+        shell: bash
+        run: |
+          curl -X POST "$CALLBACK_URL" \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "requestId": "${{ inputs.request_id }}",
+              "statePath": "${{ inputs.state_path }}",
+              "resultPath": "${{ inputs.result_path }}"
+            }'
+        env:
+          CALLBACK_URL: ${{ secrets.CLOUDFLARE_CALLBACK_URL }}
+          CALLBACK_TOKEN: ${{ secrets.CLOUDFLARE_CALLBACK_TOKEN }}

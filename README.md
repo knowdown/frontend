@@ -2,6 +2,13 @@
 
 Static operator console for Knockdown, published from this repository with GitHub Pages.
 
+## Architecture Notes
+
+Implementation notes for the GitHub-backed async request broker pattern live here:
+
+- [Request broker architecture](./docs/request-broker-architecture.md)
+- [GitHub Actions workflow template](./docs/process-request.workflow-template.yml)
+
 ## Deployment
 
 Pushes to `main` trigger `.github/workflows/deploy-pages.yml`, which:
