@@ -13,6 +13,44 @@ const onboardingWorkflow = data.onboardingWorkflow || [];
 const adminConsole = data.adminConsole || {};
 const baseConnectorProfiles = adminConsole.connectorProfiles || [];
 const githubPersistenceDefaults = data.githubPersistenceDefaults || {};
+const WORKFLOW_PHASE_LIBRARY = [
+  {
+    id: "source_intake",
+    label: "Source intake",
+    description: "Pull the source delivery item and normalize it into Knockdown's delivery contract.",
+    requiredForActivation: true,
+  },
+  {
+    id: "context_enrichment",
+    label: "Context enrichment",
+    description: "Bring in prior delivery context, hotspots, and supporting knowledge for better routing.",
+    requiredForActivation: false,
+  },
+  {
+    id: "planning",
+    label: "Planning",
+    description: "Build the implementation or diagnosis plan before execution begins.",
+    requiredForActivation: false,
+  },
+  {
+    id: "execution",
+    label: "Execution",
+    description: "Perform repo, code, issue, or workflow operations for the active delivery path.",
+    requiredForActivation: true,
+  },
+  {
+    id: "validation",
+    label: "Validation",
+    description: "Run verification, runtime evidence capture, and regression safety checks.",
+    requiredForActivation: false,
+  },
+  {
+    id: "source_sync",
+    label: "Source sync",
+    description: "Write approved outcomes back to the primary source-of-record connector.",
+    requiredForActivation: true,
+  },
+];
 const baseWorkflowProfiles = workTypes.map((flow) => ({
   id: flow.id,
   name: flow.name,
@@ -21,30 +59,42 @@ const baseWorkflowProfiles = workTypes.map((flow) => ({
   retryCount: flow.workflowAdmin?.retryCount ?? 1,
   maxConcurrency: flow.workflowAdmin?.maxConcurrency ?? 1,
   triggerConditions: flow.workflowAdmin?.triggerConditions || (flow.routingSignals || []).join(", "),
+  connectorScopeIds: flow.workflowAdmin?.connectorScopeIds || flow.connectorIds || [],
   requiredConnectorIds: flow.workflowAdmin?.requiredConnectorIds || flow.connectorIds || [],
   optionalConnectorIds: flow.workflowAdmin?.optionalConnectorIds || [],
+  phaseConnectorPreferences: flow.workflowAdmin?.phaseConnectorPreferences || null,
   summary: flow.summary || "",
-}));
+})).map((profile) => normalizeWorkflowProfile(profile));
 
 const ADMIN_STORAGE_KEY = "knockdown.admin.connectorProfiles.v1";
 const WORKFLOW_STORAGE_KEY = "knockdown.admin.workflowProfiles.v1";
 const GITHUB_PERSISTENCE_STORAGE_KEY = "knockdown.admin.githubPersistence.v1";
 const GITHUB_API_VERSION = "2022-11-28";
+const RECENT_DECISIONS = [
+  { status: "Approved", action: "PR merge approval", target: "DEF0840991", time: "47m ago", outcome: "Closed" },
+  { status: "Approved", action: "Source sync", target: "DEF0840883", time: "2h ago", outcome: "Closed" },
+  { status: "Rejected", action: "Architect review", target: "GH#35", time: "3h ago", outcome: "Revised" },
+];
+const ENVIRONMENT_LABEL = "PROD";
+const TEAM_LABEL = "UXC Controls";
 
 const $ = (id) => document.getElementById(id);
 
 const panels = {
-  setup: $("setupPanel"),
-  runs: $("runsPanel"),
-  monitor: $("monitorPanel"),
-  admin: $("adminPanel"),
+  workspace: $("workspacePanel"),
+  delivery: $("monitorPanel"),
+  decisions: $("runsPanel"),
+  pipelines: $("setupPanel"),
+  connectors: $("adminPanel"),
+  intelligence: $("intelligencePanel"),
+  settings: $("settingsPanel"),
 };
 
 const navButtons = Array.from(document.querySelectorAll(".primary-nav"));
 const searchInput = document.querySelector(".global-search input");
 const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
 
-let activeView = "setup";
+let activeView = "workspace";
 let activeRunId = liveRuns[0]?.id || "";
 let activeTemplateId = templates[0]?.id || "";
 let activeFlowId = workTypes[0]?.id || "";
@@ -189,11 +239,11 @@ function hydrateConnectorProfiles(baseProfiles, overrides) {
 
 function hydrateWorkflowProfiles(baseProfiles, overrides) {
   const base = deepClone(baseProfiles);
-  if (!Array.isArray(overrides) || !overrides.length) return base;
+  if (!Array.isArray(overrides) || !overrides.length) return base.map((profile) => normalizeWorkflowProfile(profile));
   const byId = new Map(overrides.map((profile) => [profile.id, profile]));
   return base.map((profile) => {
     const override = byId.get(profile.id);
-    return override ? deepMerge(profile, override) : profile;
+    return normalizeWorkflowProfile(override ? deepMerge(profile, override) : profile);
   });
 }
 
@@ -229,7 +279,7 @@ function updateWorkflowProfile(workflowId, transform) {
   workflowProfilesState = workflowProfilesState.map((profile) => {
     if (profile.id !== workflowId) return profile;
     const nextProfile = transform(deepClone(profile));
-    return nextProfile || profile;
+    return normalizeWorkflowProfile(nextProfile || profile);
   });
   saveWorkflowOverrides();
 }
@@ -332,6 +382,14 @@ function slugify(value) {
     .slice(0, 48);
 }
 
+function formatCurrentDateLabel() {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date());
+}
+
 function decodeBase64Utf8(value) {
   const binary = atob(value);
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
@@ -409,6 +467,90 @@ function activeAdminWorkflow() {
   return workflowProfile(activeAdminWorkflowId) || workflowProfile(activeFlowId) || workflowProfilesState[0] || null;
 }
 
+function workflowDefinition(workflow) {
+  return workTypes.find((item) => item.id === workflow?.id) || null;
+}
+
+function uniqueConnectorIds(ids = []) {
+  return Array.from(new Set((ids || []).filter(Boolean)));
+}
+
+function defaultPhaseConnectorIds(flow, phaseId) {
+  const available = new Set(flow?.connectorIds || []);
+  const recommended = flow?.recommendedSourceId;
+  const phaseConnectorSuggestions = {
+    source_intake: [recommended || flow?.connectorIds?.[0]],
+    context_enrichment: ["knowledge-plane"],
+    planning: [recommended, "knowledge-plane"].filter((id) => id !== "playwright"),
+    execution: ["github-issues", recommended],
+    validation: ["playwright"],
+    source_sync: [recommended],
+  };
+  return uniqueConnectorIds((phaseConnectorSuggestions[phaseId] || []).filter((id) => available.has(id)));
+}
+
+function defaultWorkflowPhasePreferences(flow) {
+  return WORKFLOW_PHASE_LIBRARY.map((phase) => ({
+    phaseId: phase.id,
+    label: phase.label,
+    description: phase.description,
+    requiredForActivation: phase.requiredForActivation,
+    connectorIds: defaultPhaseConnectorIds(flow, phase.id),
+  }));
+}
+
+function syncWorkflowConnectorRequirements(profile) {
+  const requiredConnectorIds = [];
+  const optionalConnectorIds = [];
+
+  (profile?.phaseConnectorPreferences || []).forEach((phase) => {
+    (phase.connectorIds || []).forEach((connectorId) => {
+      if (phase.requiredForActivation) requiredConnectorIds.push(connectorId);
+      else optionalConnectorIds.push(connectorId);
+    });
+  });
+
+  profile.requiredConnectorIds = uniqueConnectorIds(requiredConnectorIds);
+  profile.optionalConnectorIds = uniqueConnectorIds(optionalConnectorIds.filter((connectorId) => !profile.requiredConnectorIds.includes(connectorId)));
+  return profile;
+}
+
+function normalizeWorkflowProfile(profile) {
+  const nextProfile = deepClone(profile);
+  const flow = workflowDefinition(nextProfile);
+  const scopeIds = uniqueConnectorIds(nextProfile.connectorScopeIds?.length ? nextProfile.connectorScopeIds : (flow?.connectorIds || [
+    ...(nextProfile.requiredConnectorIds || []),
+    ...(nextProfile.optionalConnectorIds || []),
+  ]));
+
+  nextProfile.connectorScopeIds = scopeIds;
+  const defaultPhases = defaultWorkflowPhasePreferences(flow);
+  const phaseMap = new Map((nextProfile.phaseConnectorPreferences || []).map((phase) => [phase.phaseId || phase.id, phase]));
+
+  nextProfile.phaseConnectorPreferences = defaultPhases.map((phase) => {
+    const existing = phaseMap.get(phase.phaseId) || {};
+    const connectorIds = uniqueConnectorIds(
+      (existing.connectorIds || existing.preferredConnectorIds || []).filter((connectorId) => scopeIds.includes(connectorId))
+    );
+    return {
+      phaseId: phase.phaseId,
+      label: existing.label || phase.label,
+      description: existing.description || phase.description,
+      requiredForActivation: typeof existing.requiredForActivation === "boolean"
+        ? existing.requiredForActivation
+        : phase.requiredForActivation,
+      connectorIds: connectorIds.length
+        ? connectorIds
+        : uniqueConnectorIds([
+            ...phase.connectorIds,
+            ...((nextProfile.requiredConnectorIds || []).includes(scopeIds[0]) ? [scopeIds[0]] : []),
+          ].filter((connectorId) => scopeIds.includes(connectorId))),
+    };
+  });
+
+  return syncWorkflowConnectorRequirements(nextProfile);
+}
+
 function setAdminStage(stage) {
   adminStage = stage === "detail" ? "detail" : "catalog";
 }
@@ -479,6 +621,59 @@ function renderGuideRows(rows) {
   `).join("");
 }
 
+function renderWorkflowPhaseCards(workflow, workflowReadiness, isEditMode) {
+  const connectorOptions = (workflow?.connectorScopeIds || []).map((connectorId) => {
+    const connector = connectors.find((item) => item.id === connectorId) || connectorProfile(connectorId);
+    return {
+      id: connectorId,
+      name: connector?.name || connectorId,
+    };
+  });
+
+  return `
+    <div class="binding-editor-list">
+      ${workflowReadiness.phases.map((phase, phaseIndex) => `
+        <div class="binding-editor-card">
+          <div class="binding-editor-top">
+            <div>
+              <strong>${escapeHtml(phase.label)}</strong>
+              <p>${escapeHtml(phase.description)}</p>
+            </div>
+            <span class="status-dot ${phase.ready ? "live" : "pending"}">${escapeHtml(phase.requiredForActivation ? (phase.ready ? "ready" : "required") : "optional")}</span>
+          </div>
+          ${isEditMode ? `
+            <div class="switch-row">
+              <label for="adminWorkflowPhaseRequired-${phaseIndex}">Required for activation</label>
+              <input id="adminWorkflowPhaseRequired-${phaseIndex}" type="checkbox" data-admin-workflow-phase-required="${phaseIndex}"${phase.requiredForActivation ? " checked" : ""}>
+            </div>
+            <div class="admin-tag-row">
+              ${connectorOptions.map((connector) => `
+                <label class="workflow-phase-chip">
+                  <input type="checkbox" data-admin-workflow-phase-connector="${phaseIndex}" value="${escapeHtml(connector.id)}"${phase.connectorIds.includes(connector.id) ? " checked" : ""}>
+                  <span>${escapeHtml(connector.name)}</span>
+                </label>
+              `).join("")}
+            </div>
+          ` : `
+            <div class="meta-tag-row">
+              ${(phase.connectors.length
+                ? phase.connectors.map((connector) => `<span>${escapeHtml(`${connector.name} (${connector.state})`)}</span>`)
+                : ['<span>No preferred connectors set</span>']).join("")}
+            </div>
+          `}
+          <div class="persistence-callout">
+            ${phase.requiredForActivation
+              ? escapeHtml(phase.missingConnectors.length
+                ? `Activation is blocked until ${phase.missingConnectors.map((connector) => connector.name).join(", ")} is validated or active for this phase.`
+                : "This phase is covered by validated or active preferred connectors.")
+              : "This phase influences routing quality, but it does not block workflow activation."}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function connectorLifecycleState(profile = activeAdminProfile()) {
   return profile?.lifecycleState || "inactive";
 }
@@ -517,26 +712,35 @@ function connectorValidationSummary(profile = activeAdminProfile()) {
 }
 
 function workflowConnectorReadiness(workflow = activeAdminWorkflow()) {
-  const required = (workflow?.requiredConnectorIds || []).map((connectorId) => {
+  const resolveConnectorState = (connectorId) => {
     const profile = connectorProfile(connectorId);
     return {
       id: connectorId,
       name: profile?.name || connectors.find((item) => item.id === connectorId)?.name || connectorId,
       state: connectorLifecycleState(profile),
       ready: ["validated", "active"].includes(connectorLifecycleState(profile)),
+    };
+  };
+
+  const phases = (workflow?.phaseConnectorPreferences || []).map((phase) => {
+    const connectorsForPhase = uniqueConnectorIds(phase.connectorIds || []).map(resolveConnectorState);
+    return {
+      ...phase,
+      connectors: connectorsForPhase,
+      missingConnectors: connectorsForPhase.filter((connector) => phase.requiredForActivation && !connector.ready),
+      ready: !phase.requiredForActivation || connectorsForPhase.every((connector) => connector.ready),
     };
   });
+
+  const required = (workflow?.requiredConnectorIds || []).map((connectorId) => {
+    return resolveConnectorState(connectorId);
+  });
   const optional = (workflow?.optionalConnectorIds || []).map((connectorId) => {
-    const profile = connectorProfile(connectorId);
-    return {
-      id: connectorId,
-      name: profile?.name || connectors.find((item) => item.id === connectorId)?.name || connectorId,
-      state: connectorLifecycleState(profile),
-      ready: ["validated", "active"].includes(connectorLifecycleState(profile)),
-    };
+    return resolveConnectorState(connectorId);
   });
   const missingRequired = required.filter((item) => !item.ready);
   return {
+    phases,
     required,
     optional,
     missingRequired,
@@ -546,6 +750,38 @@ function workflowConnectorReadiness(workflow = activeAdminWorkflow()) {
 
 function activeRun() {
   return liveRuns.find((run) => run.id === activeRunId) || liveRuns[0] || null;
+}
+
+function operatorDisplayName() {
+  const user = window.KnockdownAuth?.user;
+  if (user?.name) return user.name.split(" ")[0];
+  if (user?.login) return user.login;
+  return "Operator";
+}
+
+function parseDurationMinutes(value) {
+  const match = String(value || "").match(/(\d+)\s*m/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function gateRuns() {
+  return liveRuns.filter((run) => /approval|gate|review/i.test(`${run.next} ${run.approval} ${run.status}`));
+}
+
+function runsByStatus(statuses) {
+  return liveRuns.filter((run) => statuses.includes(String(run.status || "").toUpperCase()));
+}
+
+function decisionConfidence(run) {
+  if (!run) return "High confidence";
+  if (run.risk === "High") return "Medium confidence";
+  return "High confidence";
+}
+
+function runProgressPercent(run) {
+  const minutes = parseDurationMinutes(run?.duration);
+  const windowMinutes = 30;
+  return Math.min(100, Math.round((minutes / windowMinutes) * 100));
 }
 
 function activeThread() {
@@ -625,7 +861,7 @@ function applyTemplate(template) {
   const flow = workTypes.find((item) => item.profileId.toLowerCase() === template.profile.toLowerCase()) || activeFlow();
   activeTemplateId = template.id;
   setFlow(flow.id, { preferRecommended: true });
-  setView("setup");
+  setView("pipelines");
   renderAll();
 }
 
@@ -672,11 +908,13 @@ function visibleRuns() {
 }
 
 function setView(view) {
+  if (!panels[view]) return;
   activeView = view;
   Object.entries(panels).forEach(([key, panel]) => {
     panel.hidden = key !== view;
   });
   navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  $("connectorPanel").hidden = !["pipelines", "connectors"].includes(view);
   renderHeader();
 }
 
@@ -712,35 +950,39 @@ function renderAuthStatus() {
   $("authSignOutButton")?.addEventListener("click", () => auth.signOut(window.location.href));
 }
 
+function sessionGithubToken() {
+  return window.KnockdownAuth?.token?.trim?.() || "";
+}
+
+function persistenceTokenStateLabel() {
+  if (githubPersistenceState.token?.trim()) return "Manual token saved locally for this browser session";
+  if (sessionGithubToken()) return "Using your signed-in GitHub session token";
+  return "No token available";
+}
+
 function renderHeader() {
-  $("launchRunButton").hidden = activeView === "admin";
+  $("launchRunButton").hidden = ["connectors", "settings", "intelligence"].includes(activeView);
+  $("environmentButton").textContent = ENVIRONMENT_LABEL;
   renderAuthStatus();
 
-  if (activeView === "setup") {
+  if (activeView === "pipelines") {
     const flow = activeFlow();
     const source = activeSource();
     const sourceRole = isPrimarySource(source, flow) ? "Primary source" : sourceSupportedByFlow(source, flow) ? "Supporting connector" : "Not mapped to this flow";
-    $("workspaceKicker").textContent = "Playground";
-    $("chatTitle").textContent = "Playground";
+    $("workspaceKicker").textContent = "Pipeline Studio";
+    $("chatTitle").textContent = "Pipeline Studio";
     $("chatMeta").innerHTML = [
-      `Source: ${escapeHtml(source?.name || "Choose one")}`,
-      `Flow: ${escapeHtml(flow?.name || "Choose one")}`,
+      `Pipeline: ${escapeHtml(flow?.name || "Choose one")}`,
+      `Connector: ${escapeHtml(source?.name || "Choose one")}`,
       escapeHtml(sourceRole),
     ].map((item) => `<span>${item}</span>`).join("");
     return;
   }
 
-  if (activeView === "monitor") {
-    $("workspaceKicker").textContent = "Monitor";
-    $("chatTitle").textContent = "Automation health";
-    $("chatMeta").innerHTML = "<span>Active runs and items that need attention.</span>";
-    return;
-  }
-
-  if (activeView === "admin") {
+  if (activeView === "connectors") {
     const profile = activeAdminProfile();
-    $("workspaceKicker").textContent = "Admin";
-    $("chatTitle").textContent = profile ? `${profile.name} configuration` : "Connector control plane";
+    $("workspaceKicker").textContent = "Connector Workshop";
+    $("chatTitle").textContent = profile ? `${profile.name}` : "Connector Workshop";
     $("chatMeta").innerHTML = [
       profile?.category || "Connector control plane",
       currentRuntimeMode(profile)?.label ? `Mode: ${currentRuntimeMode(profile).label}` : "",
@@ -749,15 +991,106 @@ function renderHeader() {
     return;
   }
 
+  if (activeView === "delivery") {
+    return;
+  }
+
+  if (activeView === "workspace" || activeView === "intelligence" || activeView === "settings") {
+    return;
+  }
+
   const run = activeRun();
   const flow = workTypes.find((item) => item.id === run?.workTypeId);
-  $("workspaceKicker").textContent = "Run";
-  $("chatTitle").textContent = run ? `${run.id} · ${run.source}` : "No run selected";
+  $("workspaceKicker").textContent = "Decision Room";
+  $("chatTitle").textContent = run ? `${run.id} · ${run.source}` : "Gate review";
   $("chatMeta").innerHTML = [
     flow?.name,
     run?.status ? `Status: ${run.status}` : "",
     run?.next ? `Next: ${run.next}` : "",
   ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+}
+
+function renderWorkspace() {
+  const urgentRuns = gateRuns();
+  const runningRuns = runsByStatus(["RUNNING"]);
+  const waitingRuns = runsByStatus(["WAITING"]);
+  const reviewRuns = urgentRuns;
+  const user = operatorDisplayName();
+
+  $("workspaceGreetingTitle").textContent = `Good morning, ${user}.`;
+  $("workspaceGreetingMeta").innerHTML = [
+    formatCurrentDateLabel(),
+    ENVIRONMENT_LABEL,
+    TEAM_LABEL,
+  ].map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+  $("workspaceEnvironmentChip").textContent = `Environment: ${ENVIRONMENT_LABEL}`;
+  $("workspaceAttentionMeta").textContent = `${urgentRuns.length} of ${Math.max(urgentRuns.length, 2)}`;
+
+  $("workspaceAttentionList").innerHTML = urgentRuns.map((run) => `
+    <div class="attention-card">
+      <div class="attention-card-primary">
+        <div class="attention-card-title">
+          <span class="tone">🟠</span>
+          <span>${escapeHtml((run.approval || run.next || "Human gate").toUpperCase())}</span>
+          <span class="decision-subtle">${escapeHtml(run.source)}</span>
+        </div>
+        <div class="attention-card-note">${escapeHtml(run.summary || run.next)}</div>
+        <div class="attention-card-meta">
+          Waiting ${escapeHtml(run.duration)} · SLA: 30m · ${escapeHtml(runProgressPercent(run))}% of gate window
+        </div>
+        <div class="sla-bar"><span style="width:${runProgressPercent(run)}%"></span></div>
+        <div class="action-row">
+          <button class="accent-button" type="button" data-open-decision="${escapeHtml(run.id)}">View & Decide</button>
+          ${run.risk === "High" ? '<button class="ghost-button" type="button">Delegate to →</button>' : ""}
+        </div>
+      </div>
+      <div class="decision-subtle">${escapeHtml(decisionConfidence(run))}</div>
+    </div>
+  `).join("");
+
+  Array.from($("workspaceAttentionList").querySelectorAll?.("[data-open-decision]") || []).forEach((button) => {
+    button.addEventListener("click", () => {
+      activeRunId = button.dataset.openDecision;
+      setView("decisions");
+      renderAll();
+    });
+  });
+
+  $("workspaceTeamSummary").innerHTML = `
+    <div class="team-run-summary">
+      <div class="team-run-pill"><strong>${runningRuns.length}</strong><span>Running</span></div>
+      <div class="team-run-pill"><strong>${waitingRuns.length}</strong><span>Waiting gate</span></div>
+      <div class="team-run-pill"><strong>${reviewRuns.length}</strong><span>Waiting review</span></div>
+      <div class="team-run-pill"><strong>124</strong><span>Done today</span></div>
+    </div>
+  `;
+
+  $("workspaceTeamRuns").innerHTML = liveRuns.map((run) => {
+    const flow = workTypes.find((item) => item.id === run.workTypeId);
+    return `
+      <div class="team-run-row">
+        <div>
+          <strong>${escapeHtml(run.id)} · ${escapeHtml(flow?.name || run.workTypeId)}</strong>
+          <div class="decision-subtle">${escapeHtml(run.stage)} · ${escapeHtml(run.source)}</div>
+        </div>
+        <div class="decision-subtle">${escapeHtml(run.duration)}</div>
+        <div class="decision-subtle">${escapeHtml(run.risk)}</div>
+      </div>
+    `;
+  }).join("");
+
+  $("workspaceRecentDecisions").innerHTML = RECENT_DECISIONS.map((item) => `
+    <div class="decision-item">
+      <strong>${escapeHtml(item.status)}</strong>
+      <div>${escapeHtml(item.action)} · ${escapeHtml(item.target)}</div>
+      <div class="decision-subtle">${escapeHtml(item.time)} → ${escapeHtml(item.outcome)}</div>
+    </div>
+  `).join("");
+
+  $("workspaceViewAllRunsButton").onclick = () => {
+    setView("delivery");
+    renderAll();
+  };
 }
 
 function renderSelects() {
@@ -864,6 +1197,76 @@ function renderSetup() {
   $("newRunButton").textContent = flow ? `▶ Run ${flow.name} dry-run` : "▶ Run Playground dry-run";
   $("launchRunButton").textContent = flow ? `▶ Run ${flow.name} dry-run` : "▶ Run Playground dry-run";
   $("setupSelectionHint").textContent = `${setupHint(flow, source, recommendedSource)} ${configDecision}`;
+  $("pipelineVersionMeta").innerHTML = [
+    `${flow?.name || "Pipeline"} v2.1`,
+    connectorLifecycleState(sourceConfig) === "active" ? "LIVE" : "Draft",
+    `Environment: ${ENVIRONMENT_LABEL}`,
+  ].map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+  $("pipelineCanvas").innerHTML = `
+    <div class="pipeline-lane">
+      <div class="pipeline-node connector">
+        <strong>⬡ ${escapeHtml(source?.name || "Primary source")}</strong>
+        <span>${escapeHtml(primarySourceLabel(flow))}</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node">
+        <strong>intake</strong>
+        <span>normalize</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node">
+        <strong>classify</strong>
+        <span>route</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node ai">
+        <strong>plan</strong>
+        <span>AI orchestration</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node connector">
+        <strong>⬡ GitHub</strong>
+        <span>execute</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node connector">
+        <strong>⬡ Playwright</strong>
+        <span>validate</span>
+      </div>
+    </div>
+    <div class="pipeline-lane pipeline-lane-gate">
+      <div class="pipeline-spacer"></div>
+      <div class="pipeline-arrow down">↓</div>
+      <div class="pipeline-node gate">
+        <strong>⏸ GATE: ${escapeHtml((flow?.approvalPosture || "source sync").replace(/^./, (char) => char.toUpperCase()))}</strong>
+        <span>Requires human approval</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node connector">
+        <strong>⬡ ${escapeHtml(source?.name || "Writeback target")}</strong>
+        <span>source_sync</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-node success">
+        <strong>learn</strong>
+        <span>done</span>
+      </div>
+    </div>
+  `;
+  $("pipelineGateConfig").innerHTML = `
+    <div class="pipeline-gate-card">
+      <div>
+        <div class="section-eyebrow">Selected Gate</div>
+        <strong>Source sync approval</strong>
+      </div>
+      <div class="pipeline-gate-grid">
+        <div><span>SLA</span><strong>30 minutes</strong></div>
+        <div><span>Escalation</span><strong>@team-lead after 30m</strong></div>
+        <div><span>Approval required from</span><strong>Connector owner</strong></div>
+        <div><span>On rejection</span><strong>Pause run and require comment</strong></div>
+      </div>
+    </div>
+  `;
   $("setupStateBanner").innerHTML = `
     <strong>${escapeHtml(flow?.name || "Choose a workload")} with ${escapeHtml(source?.name || "a source")}</strong><br>
     ${escapeHtml(hasEditableConfig
@@ -1141,7 +1544,7 @@ function renderRunRail() {
     button.addEventListener("click", () => {
       activeRunId = run.id;
       activeFlowId = run.workTypeId || activeFlowId;
-      setView("runs");
+      setView("decisions");
       renderAll();
     });
     $("historyList").appendChild(button);
@@ -1169,30 +1572,7 @@ function renderTemplateRail() {
     });
 }
 
-function renderRuns() {
-  const run = activeRun();
-  const thread = activeThread();
-  const flow = workTypes.find((item) => item.id === run?.workTypeId);
-
-  $("runTitle").textContent = run ? `${run.id} · ${run.source}` : "No run selected";
-  $("runMeta").innerHTML = [
-    flow?.name,
-    run?.status ? `Status: ${run.status}` : "",
-    run?.owner ? `Owner: ${run.owner}` : "",
-  ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
-
-  $("runSummaryList").innerHTML = [
-    ["Flow", flow?.name || "Unknown"],
-    ["Current step", run?.stage || "Idle"],
-    ["Risk", run?.risk || "n/a"],
-    ["Next", run?.next || "n/a"],
-  ].map(([label, value]) => `
-    <div class="summary-row">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-    </div>
-  `).join("");
-
+function renderRunActivity(thread) {
   $("timelineList").innerHTML = (thread?.timeline || []).map((item) => `
     <div class="timeline-item ${escapeHtml(item.state)}">
       <div class="timeline-marker"></div>
@@ -1207,33 +1587,136 @@ function renderRuns() {
   `).join("");
 
   $("messageStream").innerHTML = (thread?.messages || []).map((message) => `
-    <article class="message ${escapeHtml(message.role)}">
+    <article class="message ${escapeHtml(message.role || "system")}">
       <div class="message-top">
-        <strong>${escapeHtml(message.author)}</strong>
-        <span>${escapeHtml(message.timestamp)}</span>
+        <strong>${escapeHtml(message.author || message.role || "System")}</strong>
+        <span>${escapeHtml(message.timestamp || "now")}</span>
       </div>
-      <div class="message-body">${message.body}</div>
+      <div class="message-body">${message.body || ""}</div>
     </article>
   `).join("");
 }
 
-function renderMonitor() {
-  $("runBoard").innerHTML = liveRuns
-    .filter((run) => matches([run.id, run.source, run.status, run.stage, run.next]))
-    .map((run) => `
-      <button class="monitor-row" data-run-id="${escapeHtml(run.id)}" type="button">
-        <div>
-          <strong>${escapeHtml(run.id)}</strong>
-          <span>${escapeHtml(run.source)}</span>
+function renderRuns() {
+  const run = activeRun();
+  const thread = activeThread();
+  const flow = workTypes.find((item) => item.id === run?.workTypeId);
+  const writebackPreview = {
+    state: run?.status === "WAITING" ? "Resolved" : "In progress",
+    resolution_notes: run?.outputs || ["Fix applied and validated via automated checks."],
+    next: run?.next || "Proceed",
+    connectors: run?.connectors || [activeSource()?.name || "source"],
+  };
+
+  $("runTitle").textContent = run ? `GATE REVIEW: ${run.next || run.stage}` : "Gate review";
+  $("runMeta").innerHTML = [
+    run ? `${run.source} · ${flow?.name || "Flow"} · ${run.id}` : "",
+    run?.status ? `Status: ${run.status}` : "",
+    run?.owner ? `Team: ${run.owner}` : "",
+  ].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+
+  $("runSummaryList").innerHTML = `
+    <div class="decision-room">
+      <section class="decision-column">
+        <h2>Work item</h2>
+        <div class="summary-list">
+          ${[
+            ["Identifier", run?.source || "Unknown"],
+            ["Owner", run?.owner || "Unknown"],
+            ["Risk", run?.risk || "n/a"],
+            ["Opened", "2026-05-23"],
+            ["Priority", run?.risk === "High" ? "P1 / escalated" : "P2"],
+            ["Stage", run?.stage || "Idle"],
+          ].map(([label, value]) => `
+            <div class="summary-row">
+              <span>${escapeHtml(label)}</span>
+              <strong>${escapeHtml(value)}</strong>
+            </div>
+          `).join("")}
         </div>
-        <span class="status-dot ${statusClass(run.status)}">${escapeHtml(run.status)}</span>
-      </button>
-    `).join("");
+        <div class="decision-comment">
+          <div class="section-eyebrow">Reproduction / context</div>
+          <div class="decision-subtle">${escapeHtml(run?.summary || "No context available.")}</div>
+        </div>
+      </section>
+      <section class="decision-column">
+        <h2>What the AI did</h2>
+        ${(thread?.timeline || []).map((item) => `
+          <div class="trace-step ${escapeHtml(item.state)}">
+            <strong>${escapeHtml(item.stage)}</strong>
+            <div class="decision-subtle">${escapeHtml(item.summary)}</div>
+          </div>
+        `).join("")}
+        <div class="decision-comment">
+          <div class="section-eyebrow">Decision trace</div>
+          <div class="decision-subtle">AI confidence: ${escapeHtml(decisionConfidence(run))}</div>
+        </div>
+      </section>
+      <section class="decision-column">
+        <h2>What happens if approved</h2>
+        <pre>${escapeHtml(JSON.stringify(writebackPreview, null, 2))}</pre>
+        <div class="decision-comment">
+          <label for="decisionCommentInput" class="section-eyebrow">Comment</label>
+          <textarea id="decisionCommentInput" rows="3">LGTM — trace and validation coverage look solid.</textarea>
+        </div>
+        <div class="decision-actions">
+          <button class="accent-button" id="approveDecisionButton" type="button">✓ Approve & Sync</button>
+          <button class="ghost-button" id="rejectDecisionButton" type="button">✗ Reject</button>
+          <button class="ghost-button" id="delegateDecisionButton" type="button">◌ Delegate</button>
+          <button class="ghost-button" id="pauseDecisionButton" type="button">⏸ Pause</button>
+        </div>
+      </section>
+    </div>
+  `;
+
+  renderRunActivity(thread);
+
+  $("approveDecisionButton")?.addEventListener("click", () => resolveDecision("approved"));
+  $("rejectDecisionButton")?.addEventListener("click", () => resolveDecision("rejected"));
+  $("delegateDecisionButton")?.addEventListener("click", () => resolveDecision("delegated"));
+  $("pauseDecisionButton")?.addEventListener("click", () => resolveDecision("paused"));
+}
+
+function renderMonitor() {
+  const columns = [
+    { key: "RUNNING", label: "● Running", items: runsByStatus(["RUNNING"]) },
+    { key: "WAITING", label: "🟠 At gate", items: runsByStatus(["WAITING"]) },
+    { key: "CHAINED", label: "◌ In review", items: runsByStatus(["CHAINED"]) },
+    { key: "DONE", label: "✓ Done", items: [] },
+  ];
+
+  $("runBoard").innerHTML = columns.map((column) => `
+    <section class="delivery-column">
+      <h3>${escapeHtml(column.label)} ${column.items.length ? `· ${column.items.length}` : "· 124"}</h3>
+      ${column.items.map((run) => {
+        const flow = workTypes.find((item) => item.id === run.workTypeId);
+        return `
+          <button class="delivery-card" data-run-id="${escapeHtml(run.id)}" type="button">
+            <div class="delivery-card-title">${escapeHtml(run.id)}</div>
+            <div>${escapeHtml(flow?.name || run.workTypeId)}</div>
+            <div class="decision-subtle">${escapeHtml(run.source)}</div>
+            <div class="decision-subtle">${escapeHtml(run.stage)} · ${escapeHtml(run.duration)} · ${escapeHtml(run.risk)}</div>
+          </button>
+        `;
+      }).join("")}
+      ${column.key === "DONE" ? `
+        <div class="delivery-card">
+          <div class="delivery-card-title">kd-155 ✓ 2h ago</div>
+          <div>Defect Closed</div>
+          <div class="decision-subtle">DEF0840883</div>
+        </div>
+        <div class="delivery-card">
+          <div class="delivery-card-title">kd-153 ✗ 3h ago</div>
+          <div>Defect Failed</div>
+          <div class="decision-subtle">Blocked: runtime</div>
+        </div>` : ""}
+    </section>
+  `).join("");
 
   Array.from($("runBoard").querySelectorAll?.("[data-run-id]") || []).forEach((button) => {
     button.addEventListener("click", () => {
       activeRunId = button.dataset.runId;
-      setView("runs");
+      setView("decisions");
       renderAll();
     });
   });
@@ -1251,6 +1734,107 @@ function renderMonitor() {
       <span>${escapeHtml(`${item.value}: ${item.note}`)}</span>
     </div>
   `).join("");
+}
+
+function renderIntelligence() {
+  $("intelligenceGrid").innerHTML = `
+    <section class="metric-card">
+      <div class="section-eyebrow">Throughput</div>
+      <strong>847 runs</strong>
+      <div class="metric-trend">+12% ↑</div>
+      <div class="metric-chart">▂▃▄▅▃▄▅▆▇▇▇▆▅▆▇▇▇▆▆▇▇█▇▇▇▅</div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">Gate Health</div>
+      <strong>14m</strong>
+      <div class="metric-trend">-3m ↓ good</div>
+      <div class="decision-subtle">Architect review remains the slowest gate type this week.</div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">Automation Rate</div>
+      <strong>73%</strong>
+      <div class="metric-trend">+8% ↑</div>
+      <div class="decision-subtle">27% of runs still require a human gate or review intervention.</div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">MTTR</div>
+      <strong>2.1h</strong>
+      <div class="metric-trend">-0.4h ↓</div>
+      <div class="decision-subtle">Defect delivery is recovering faster than the previous 30 day baseline.</div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">AI Confidence</div>
+      <strong>91%</strong>
+      <div class="metric-trend">stable</div>
+      <div class="decision-subtle">Routing confidence remains high enough to keep most flows autonomous with gates.</div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">ROI Estimate</div>
+      <strong>1,948h</strong>
+      <div class="metric-trend">saved this period</div>
+      <div class="decision-subtle">847 runs × 2.3h average manual effort, adjusted by the current automation rate.</div>
+    </section>
+    <section class="metric-card span-2">
+      <div class="section-eyebrow">Gate Wait By Type</div>
+      <div class="metric-list">
+        <div class="metric-list-row"><span>Source sync</span><strong>14m</strong></div>
+        <div class="metric-list-row"><span>Architect review</span><strong>21m</strong></div>
+        <div class="metric-list-row"><span>PR merge</span><strong>8m</strong></div>
+        <div class="metric-list-row"><span>Customer safe</span><strong>4m</strong></div>
+      </div>
+    </section>
+    <section class="metric-card">
+      <div class="section-eyebrow">Failure Patterns</div>
+      <div class="metric-list">
+        <div class="metric-list-row"><span>Auth drift</span><strong>18</strong></div>
+        <div class="metric-list-row"><span>Approval delay</span><strong>11</strong></div>
+        <div class="metric-list-row"><span>Runtime unavailable</span><strong>4</strong></div>
+        <div class="metric-list-row"><span>Schema mismatch</span><strong>3</strong></div>
+      </div>
+    </section>
+    ${failureHeatmap.map((item) => `
+      <section class="anomaly-card">
+        <div class="section-eyebrow">Anomaly</div>
+        <strong>${escapeHtml(item.area)}</strong>
+        <div class="decision-subtle">${escapeHtml(item.value)}</div>
+        <div class="settings-subtle">${escapeHtml(item.note)}</div>
+      </section>
+    `).join("")}
+  `;
+}
+
+function renderSettings() {
+  const authUser = window.KnockdownAuth?.user;
+  $("settingsGrid").innerHTML = `
+    <section class="settings-card">
+      <div class="section-eyebrow">Operator</div>
+      <h2>${escapeHtml(authUser?.name || authUser?.login || "Unassigned")}</h2>
+      <div class="settings-subtle">${escapeHtml(authUser?.html_url || "GitHub-authenticated operator context")}</div>
+      <div class="settings-list">
+        <div class="settings-row"><span>Team</span><strong>${escapeHtml(TEAM_LABEL)}</strong></div>
+        <div class="settings-row"><span>Environment</span><strong>${escapeHtml(ENVIRONMENT_LABEL)}</strong></div>
+        <div class="settings-row"><span>Permissions</span><strong>Gate approver · Connector owner</strong></div>
+      </div>
+    </section>
+    <section class="settings-card">
+      <div class="section-eyebrow">GitHub Persistence</div>
+      <h2>${escapeHtml(`${githubPersistenceState.owner || "owner"}/${githubPersistenceState.repo || "repo"}`)}</h2>
+      <div class="settings-list">
+        <div class="settings-row"><span>Branch</span><strong>${escapeHtml(githubPersistenceState.branch || "main")}</strong></div>
+        <div class="settings-row"><span>Environment</span><strong>${escapeHtml(githubPersistenceState.environment || "repo-level")}</strong></div>
+        <div class="settings-row"><span>Commit prefix</span><strong>${escapeHtml(githubPersistenceState.commitMessagePrefix || "chore(connectors): update")}</strong></div>
+      </div>
+    </section>
+    <section class="settings-card">
+      <div class="section-eyebrow">Integrations</div>
+      <h2>Control-plane scope</h2>
+      <div class="settings-list">
+        <div class="settings-row"><span>Connectors live</span><strong>${connectors.filter((item) => item.status === "LIVE").length}</strong></div>
+        <div class="settings-row"><span>Workflow profiles</span><strong>${workflowProfilesState.length}</strong></div>
+        <div class="settings-row"><span>Config sources</span><strong>${configSources.length}</strong></div>
+      </div>
+    </section>
+  `;
 }
 
 function renderDetails() {
@@ -1304,10 +1888,12 @@ function renderDetails() {
   ` : "";
 }
 
-function githubHeaders() {
-  const token = githubPersistenceState.token?.trim();
+function githubHeaders(options = {}) {
+  const token = githubPersistenceState.token?.trim() || (options.allowSessionFallback ? sessionGithubToken() : "");
   if (!token) {
-    throw new Error("Add a GitHub token before saving. A fine-grained token with contents, variables, and secrets write access is recommended.");
+    throw new Error(options.allowSessionFallback
+      ? "No GitHub token is available. Sign in again or add a fine-grained token for connector persistence."
+      : "Add a GitHub token before saving. A fine-grained token with contents, variables, and secrets write access is recommended.");
   }
   return {
     Accept: "application/vnd.github+json",
@@ -1325,7 +1911,7 @@ async function githubRequest(path, options = {}) {
   const response = await fetch(githubApiUrl(path), {
     ...options,
     headers: {
-      ...githubHeaders(),
+      ...githubHeaders({ allowSessionFallback: options.allowSessionFallback }),
       ...(options.headers || {}),
     },
   });
@@ -1343,7 +1929,9 @@ async function githubRequest(path, options = {}) {
 
 async function getRepoContent(path) {
   const query = new URLSearchParams({ ref: githubPersistenceState.branch || "main" }).toString();
-  return githubRequest(`/repos/${githubPersistenceState.owner}/${githubPersistenceState.repo}/contents/${path}?${query}`);
+  return githubRequest(`/repos/${githubPersistenceState.owner}/${githubPersistenceState.repo}/contents/${path}?${query}`, {
+    allowSessionFallback: true,
+  });
 }
 
 function buildPersistedConnectorConfig(profile, existingConfig) {
@@ -1400,6 +1988,7 @@ async function saveConnectorConfigToGithub(profile) {
 
   await githubRequest(`/repos/${githubPersistenceState.owner}/${githubPersistenceState.repo}/contents/${profile.connectorFile}`, {
     method: "PUT",
+    allowSessionFallback: true,
     body: JSON.stringify({
       message: `${githubPersistenceState.commitMessagePrefix || "chore(connectors): update"} ${profile.id} connector profile`,
       content,
@@ -2035,16 +2624,21 @@ function renderAdmin() {
       <h3>Connector readiness for activation</h3>
       ${renderGuideRows([
         ["Required connectors", formatListValue(workflowReadiness.required.map((item) => `${item.name} (${item.state})`))],
-        ["Optional connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
+        ["Supporting connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
         ["Activation gate", workflowReadiness.canActivate ? "All required connectors are validated or active." : `Blocked until validated: ${workflowReadiness.missingRequired.map((item) => item.name).join(", ")}`],
       ])}
+    </div>
+    <div class="guide-panel">
+      <h3>Preferred connectors by agentic phase</h3>
+      <p class="setup-panel-copy">Set which connectors each phase should prefer, then mark the phases that must be ready before this workflow can activate. For example, source intake can require the source-of-record connector while validation can stay optional.</p>
+      ${renderWorkflowPhaseCards(workflow, workflowReadiness, true)}
     </div>
     <div class="persistence-actions">
       <button class="ghost-button" type="button" id="activateWorkflowButton">Activate workflow</button>
       <button class="ghost-button" type="button" id="deactivateWorkflowButton">Deactivate workflow</button>
     </div>
     <div class="persistence-callout">
-      Workflow activation requires every required connector to be in a validated or active state. The values above model workflow-level YAML concerns such as retry count, trigger conditions, and concurrency.
+      Workflow activation now derives from the connectors you assign to required phases. Use the phase rows above to control whether pulling the source item, planning, execution, validation, or source sync should block activation.
     </div>
   ` : `
     ${renderGuideRows([
@@ -2055,9 +2649,13 @@ function renderAdmin() {
       ["Max concurrency", String(workflow.maxConcurrency ?? 1)],
       ["Trigger conditions", workflow.triggerConditions || "Not set"],
       ["Required connectors", formatListValue(workflowReadiness.required.map((item) => `${item.name} (${item.state})`))],
-      ["Optional connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
+      ["Supporting connectors", formatListValue(workflowReadiness.optional.map((item) => `${item.name} (${item.state})`))],
       ["Activation gate", workflowReadiness.canActivate ? "Ready to activate." : `Blocked until validated: ${workflowReadiness.missingRequired.map((item) => item.name).join(", ")}`],
     ])}
+    <div class="guide-panel">
+      <h3>Preferred connectors by agentic phase</h3>
+      ${renderWorkflowPhaseCards(workflow, workflowReadiness, false)}
+    </div>
   `) : "";
 
   $("adminWorkflowPreview").textContent = workflow ? JSON.stringify({
@@ -2068,6 +2666,8 @@ function renderAdmin() {
     retryCount: workflow.retryCount,
     maxConcurrency: workflow.maxConcurrency,
     triggerConditions: workflow.triggerConditions,
+    connectorScopeIds: workflow.connectorScopeIds,
+    phaseConnectorPreferences: workflow.phaseConnectorPreferences,
     requiredConnectorIds: workflow.requiredConnectorIds,
     optionalConnectorIds: workflow.optionalConnectorIds,
   }, null, 2) : "";
@@ -2092,6 +2692,8 @@ function renderAdmin() {
       retryCount: workflow.retryCount,
       maxConcurrency: workflow.maxConcurrency,
       triggerConditions: workflow.triggerConditions,
+      connectorScopeIds: workflow.connectorScopeIds,
+      phaseConnectorPreferences: workflow.phaseConnectorPreferences,
       requiredConnectorIds: workflow.requiredConnectorIds,
       optionalConnectorIds: workflow.optionalConnectorIds,
     } : null,
@@ -2105,7 +2707,7 @@ function renderAdmin() {
       </div>
       <div class="admin-form-field">
         <label for="persistToken">GitHub token</label>
-        <input id="persistToken" type="password" value="${escapeHtml(githubPersistenceState.token || "")}" data-persist-setting="token" placeholder="Fine-grained PAT or app token">
+        <input id="persistToken" type="password" value="${escapeHtml(githubPersistenceState.token || "")}" data-persist-setting="token" placeholder="Optional override: fine-grained PAT or app token">
       </div>
       <div class="admin-form-field">
         <label for="persistOwner">Owner</label>
@@ -2137,7 +2739,7 @@ function renderAdmin() {
     <div class="persistence-callout">
       Connector config writes to <strong>${escapeHtml(profile.connectorFile || "the selected connector file")}</strong> in
       <strong>${escapeHtml(`${githubPersistenceState.owner || "owner"}/${githubPersistenceState.repo || "repo"}`)}</strong>.
-      Variables and secrets are written as GitHub Actions ${escapeHtml(githubPersistenceState.environment ? `environment settings for ${githubPersistenceState.environment}` : "repository settings")} for the same repo.
+      Config saves can use your signed-in GitHub session automatically. Variables and secrets are written as GitHub Actions ${escapeHtml(githubPersistenceState.environment ? `environment settings for ${githubPersistenceState.environment}` : "repository settings")} for the same repo and may still require a fine-grained token with the right admin scopes.
     </div>
     <div class="persist-status ${escapeHtml(persistenceStatus.tone)}">
       <strong>${escapeHtml(persistenceStatus.message)}</strong>
@@ -2151,10 +2753,10 @@ function renderAdmin() {
       ["Branch", githubPersistenceState.branch || "main"],
       ["Environment", githubPersistenceState.environment || "Repository-level settings"],
       ["Commit message prefix", githubPersistenceState.commitMessagePrefix || "Not set"],
-      ["Token state", githubPersistenceState.token ? "Token saved locally for this browser session" : "No token entered"],
+      ["Token state", persistenceTokenStateLabel()],
     ])}
     <div class="persistence-callout">
-      Switch to <strong>Edit mode</strong> to change GitHub persistence settings or save connector config, variables, and secrets.
+      Switch to <strong>Edit mode</strong> to change GitHub persistence settings or save connector config, variables, and secrets. Connector config can fall back to your signed-in GitHub session; variables and secrets usually need a fine-grained token.
     </div>
     <div class="persist-status ${escapeHtml(persistenceStatus.tone)}">
       <strong>${escapeHtml(persistenceStatus.message)}</strong>
@@ -2414,6 +3016,37 @@ function bindAdminPanelEvents() {
     });
   });
 
+  Array.from($("adminWorkflowPanel").querySelectorAll?.("[data-admin-workflow-phase-required]") || []).forEach((input) => {
+    input.addEventListener("change", () => {
+      const phaseIndex = Number(input.dataset.adminWorkflowPhaseRequired);
+      updateWorkflowProfile(activeAdminWorkflowId, (currentWorkflow) => {
+        if (!currentWorkflow.phaseConnectorPreferences?.[phaseIndex]) return currentWorkflow;
+        currentWorkflow.phaseConnectorPreferences[phaseIndex].requiredForActivation = input.checked;
+        return currentWorkflow;
+      });
+      setPersistenceStatus("pending", "Workflow phase readiness updated locally. Activation will now follow the required phases you selected.");
+      renderAll();
+    });
+  });
+
+  Array.from($("adminWorkflowPanel").querySelectorAll?.("[data-admin-workflow-phase-connector]") || []).forEach((input) => {
+    input.addEventListener("change", () => {
+      const phaseIndex = Number(input.dataset.adminWorkflowPhaseConnector);
+      const connectorId = input.value;
+      updateWorkflowProfile(activeAdminWorkflowId, (currentWorkflow) => {
+        const phase = currentWorkflow.phaseConnectorPreferences?.[phaseIndex];
+        if (!phase) return currentWorkflow;
+        const connectorIds = new Set(phase.connectorIds || []);
+        if (input.checked) connectorIds.add(connectorId);
+        else connectorIds.delete(connectorId);
+        phase.connectorIds = Array.from(connectorIds);
+        return currentWorkflow;
+      });
+      setPersistenceStatus("pending", "Workflow phase connector preferences updated locally. Readiness has been recalculated.");
+      renderAll();
+    });
+  });
+
   const activateWorkflowButton = $("activateWorkflowButton");
   if (activateWorkflowButton) {
     activateWorkflowButton.addEventListener("click", () => {
@@ -2556,7 +3189,7 @@ function createConfiguredRun(template = activeTemplate()) {
   });
 
   activeRunId = runId;
-  setView("runs");
+  setView("delivery");
   renderAll();
 }
 
@@ -2571,23 +3204,88 @@ function addRunNote() {
     timestamp: "now",
     body: `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`,
   });
-  renderRuns();
+  $("composerInput").value = "";
+  renderAll();
 }
 
 function attachRunContext() {
   const run = activeRun();
-  if (!run) return;
-  $("composerInput").value = `${$("composerInput").value.trim()}\n\nRun context:\n- ${run.id}\n- ${run.source}\n- ${run.stage}\n- ${run.next}`;
+  const input = $("decisionCommentInput") || $("composerInput");
+  if (!run || !input) return;
+  input.value = `${input.value.trim()}\n\nRun context:\n- ${run.id}\n- ${run.source}\n- ${run.stage}\n- ${run.next}`.trim();
+}
+
+function resolveDecision(action) {
+  const run = activeRun();
+  const thread = activeThread();
+  if (!run || !thread) return;
+
+  const comment = ($("decisionCommentInput")?.value || "").trim();
+  const actionMap = {
+    approved: {
+      author: "Approve & Sync",
+      next: "Source sync executing",
+      status: "RUNNING",
+      stage: "source_sync",
+      body: comment || "Approved for source sync execution.",
+    },
+    rejected: {
+      author: "Reject",
+      next: "Revision requested",
+      status: "WAITING",
+      stage: "revision_required",
+      body: comment || "Rejected and sent back for revision.",
+    },
+    delegated: {
+      author: "Delegate",
+      next: "Delegated to team lead",
+      status: "WAITING",
+      stage: "delegated_review",
+      body: comment || "Delegated for specialist review.",
+    },
+    paused: {
+      author: "Pause",
+      next: "Paused by operator",
+      status: "WAITING",
+      stage: "paused",
+      body: comment || "Paused pending follow-up.",
+    },
+  };
+
+  const nextAction = actionMap[action];
+  if (!nextAction) return;
+
+  run.status = nextAction.status;
+  run.stage = nextAction.stage;
+  run.next = nextAction.next;
+
+  thread.messages.push({
+    role: "user",
+    author: nextAction.author,
+    timestamp: "now",
+    body: `<p>${escapeHtml(nextAction.body).replace(/\n/g, "<br>")}</p>`,
+  });
+
+  thread.timeline.push({
+    stage: nextAction.stage,
+    state: action === "approved" ? "active" : "pending",
+    summary: nextAction.body,
+  });
+
+  renderAll();
 }
 
 function renderAll() {
   renderHeader();
   renderSelects();
+  renderWorkspace();
   renderSetup();
   renderRunRail();
   renderTemplateRail();
   renderRuns();
   renderMonitor();
+  renderIntelligence();
+  renderSettings();
   renderDetails();
   renderAdmin();
 }
@@ -2611,15 +3309,24 @@ $("flowSelect").addEventListener("change", (event) => {
 $("newRunButton").addEventListener("click", () => createConfiguredRun(activeTemplate()));
 $("launchRunButton").addEventListener("click", () => createConfiguredRun(activeTemplate()));
 $("sendButton").addEventListener("click", addRunNote);
-$("attachContextButton").addEventListener("click", attachRunContext);
-$("exportBriefButton").addEventListener("click", attachRunContext);
-$("pauseRunButton").addEventListener("click", () => {
-  const run = activeRun();
-  if (run) {
-    run.status = "WAITING";
-    run.next = "Resume when ready";
-    renderAll();
-  }
+$("backToWorkspaceButton").addEventListener("click", () => {
+  setView("workspace");
+  renderAll();
+});
+$("viewTraceButton").addEventListener("click", () => {
+  $("timelineList")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+$("pauseDecisionHeaderButton").addEventListener("click", () => resolveDecision("paused"));
+$("pipelineTestButton").addEventListener("click", () => createConfiguredRun(activeTemplate()));
+$("pipelinePromoteButton").addEventListener("click", () => {
+  setAdminEntity("workflows");
+  openAdminDetail({ entity: "workflows", mode: "view" });
+  setView("connectors");
+  renderAll();
+});
+$("environmentButton").addEventListener("click", () => {
+  setView("settings");
+  renderAll();
 });
 
 $("resetConnectorButton").addEventListener("click", () => {
@@ -2631,7 +3338,7 @@ $("createConnectorProfileButton").addEventListener("click", () => {
   setAdminEntity("connectors");
   openAdminDetail({ entity: "connectors", mode: "edit" });
   createConnectorProfileFromTemplate("enterprise-template");
-  setView("admin");
+  setView("connectors");
   renderAll();
 });
 
@@ -2641,7 +3348,7 @@ $("duplicateConnectorProfileButton").addEventListener("click", () => {
   createConnectorProfileFromTemplate(activeSourceId, {
     name: `Copy of ${activeAdminProfile()?.name || "Connector"}`,
   });
-  setView("admin");
+  setView("connectors");
   renderAll();
 });
 
@@ -2658,7 +3365,7 @@ $("openSetupAdminButton").addEventListener("click", () => {
   }
   setAdminEntity("connectors");
   openAdminDetail({ entity: "connectors", mode: "edit" });
-  setView("admin");
+  setView("connectors");
   renderAll();
 });
 
@@ -2666,7 +3373,7 @@ $("createSetupConfigButton").addEventListener("click", () => {
   setAdminEntity("connectors");
   openAdminDetail({ entity: "connectors", mode: "edit" });
   createConnectorProfileForSource(activeSource());
-  setView("admin");
+  setView("connectors");
   renderAll();
 });
 
@@ -2696,18 +3403,29 @@ $("cancelConnectorChangesButton").addEventListener("click", () => {
   renderAll();
 });
 
-$("setupShortcut").addEventListener("click", () => setView("setup"));
-$("runsShortcut").addEventListener("click", () => setView("runs"));
-$("monitorShortcut").addEventListener("click", () => setView("monitor"));
+$("setupShortcut").addEventListener("click", () => {
+  setView("workspace");
+  renderAll();
+});
+$("runsShortcut").addEventListener("click", () => {
+  setView("delivery");
+  renderAll();
+});
+$("monitorShortcut").addEventListener("click", () => {
+  setView("decisions");
+  renderAll();
+});
 $("adminShortcut").addEventListener("click", () => {
   openAdminCatalog();
-  setView("admin");
+  setView("connectors");
+  renderAll();
 });
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (button.dataset.view === "admin") openAdminCatalog();
+    if (button.dataset.view === "connectors") openAdminCatalog();
     setView(button.dataset.view);
+    renderAll();
   });
 });
 

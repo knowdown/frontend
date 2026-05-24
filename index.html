@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Knockdown Console</title>
+<title>Knockdown Delivery Intelligence Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,32 +12,44 @@
 <link rel="stylesheet" href="./app.css">
 <script defer src="https://cdn.jsdelivr.net/npm/libsodium-wrappers-sumo@0.7.15/dist/modules-sumo/libsodium-wrappers.js"></script>
 </head>
-<body data-theme="corporate">
+<body data-theme="night">
   <div class="app-shell">
     <aside class="side-nav" id="historyPanel">
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true">K</div>
         <div>
           <div class="brand-title">Knockdown</div>
-          <div class="brand-subtitle">Automation setup</div>
+          <div class="brand-subtitle">Delivery intelligence platform</div>
         </div>
       </div>
 
-      <button class="primary-nav active" id="setupTab" data-view="setup" type="button">
-        <span class="nav-icon">+</span>
-        <span>Playground</span>
+      <button class="primary-nav active" id="workspaceTab" data-view="workspace" type="button">
+        <span class="nav-icon">◈</span>
+        <span>Workspace</span>
       </button>
-      <button class="primary-nav" id="runsTab" data-view="runs" type="button">
+      <button class="primary-nav" id="deliveryTab" data-view="delivery" type="button">
         <span class="nav-icon">▶</span>
-        <span>Runs</span>
+        <span>Delivery</span>
       </button>
-      <button class="primary-nav" id="monitorTab" data-view="monitor" type="button">
-        <span class="nav-icon">●</span>
-        <span>Monitor</span>
+      <button class="primary-nav" id="decisionsTab" data-view="decisions" type="button">
+        <span class="nav-icon">⊕</span>
+        <span>Decisions</span>
       </button>
-      <button class="primary-nav" id="adminTab" data-view="admin" type="button">
-        <span class="nav-icon">⌘</span>
-        <span>Admin</span>
+      <button class="primary-nav" id="pipelinesTab" data-view="pipelines" type="button">
+        <span class="nav-icon">≋</span>
+        <span>Pipelines</span>
+      </button>
+      <button class="primary-nav" id="connectorsTab" data-view="connectors" type="button">
+        <span class="nav-icon">⬡</span>
+        <span>Connectors</span>
+      </button>
+      <button class="primary-nav" id="intelligenceTab" data-view="intelligence" type="button">
+        <span class="nav-icon">⌁</span>
+        <span>Intelligence</span>
+      </button>
+      <button class="primary-nav" id="settingsTab" data-view="settings" type="button">
+        <span class="nav-icon">⚙</span>
+        <span>Settings</span>
       </button>
 
       <div class="side-section">
@@ -65,13 +77,14 @@
         </button>
         <div class="global-search">
           <span class="search-icon">⌕</span>
-          <input type="text" placeholder="Search templates, sources, or runs" aria-label="Global search">
+          <input type="text" placeholder="Search anything..." aria-label="Global search">
         </div>
         <div class="topbar-actions">
-          <button class="ghost-button" id="setupShortcut" type="button">Playground</button>
-          <button class="ghost-button" id="runsShortcut" type="button">Runs</button>
-          <button class="ghost-button" id="monitorShortcut" type="button">Monitor</button>
-          <button class="ghost-button" id="adminShortcut" type="button">Admin</button>
+          <button class="ghost-button" id="setupShortcut" type="button">Workspace</button>
+          <button class="ghost-button" id="runsShortcut" type="button">Delivery</button>
+          <button class="ghost-button" id="monitorShortcut" type="button">Decisions</button>
+          <button class="ghost-button" id="adminShortcut" type="button">Connectors</button>
+          <button class="ghost-button" id="environmentButton" type="button">PROD</button>
           <div id="authStatus"></div>
           <button class="accent-button" id="launchRunButton" type="button">▶ Start test run</button>
           <button class="mobile-toggle" id="connectorToggle" aria-label="Open details">
@@ -82,10 +95,56 @@
         </div>
       </header>
 
-      <section class="workspace-panel" id="setupPanel">
+      <section class="workspace-panel" id="workspacePanel">
+        <section class="workspace-landing">
+          <div class="workspace-greeting">
+            <div class="workspace-kicker" id="workspaceGreetingKicker">Workspace</div>
+            <h1 id="workspaceGreetingTitle">Good morning.</h1>
+            <div class="workspace-meta" id="workspaceGreetingMeta"></div>
+          </div>
+          <div class="workspace-environment" id="workspaceEnvironmentChip">Environment: PROD</div>
+        </section>
+
+        <section class="plain-panel attention-panel">
+          <div class="panel-header-row">
+            <div>
+              <div class="section-eyebrow">Needs Your Attention</div>
+              <h2>Human gates and exceptions</h2>
+            </div>
+            <div class="section-meta-text" id="workspaceAttentionMeta">0 of 0</div>
+          </div>
+          <div id="workspaceAttentionList"></div>
+        </section>
+
+        <div class="workspace-grid">
+          <section class="plain-panel span-2">
+            <div class="panel-header-row">
+              <div>
+                <div class="section-eyebrow">Your Team</div>
+                <h2>UXC Controls active delivery</h2>
+              </div>
+              <button class="ghost-button" id="workspaceViewAllRunsButton" type="button">→ View all runs</button>
+            </div>
+            <div id="workspaceTeamSummary"></div>
+            <div id="workspaceTeamRuns"></div>
+          </section>
+
+          <section class="plain-panel">
+            <div class="panel-header-row">
+              <div>
+                <div class="section-eyebrow">Recent Decisions</div>
+                <h2>Outcomes from your queue</h2>
+              </div>
+            </div>
+            <div id="workspaceRecentDecisions"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="workspace-panel" id="setupPanel" hidden>
         <section class="setup-hero">
-          <div class="workspace-kicker" id="workspaceKicker">Playground</div>
-          <h1 id="chatTitle">Playground</h1>
+          <div class="workspace-kicker" id="workspaceKicker">Pipeline Studio</div>
+          <h1 id="chatTitle">Pipeline Studio</h1>
           <div class="workspace-meta" id="chatMeta"></div>
 
           <div class="prompt-box">
@@ -100,6 +159,22 @@
             <button class="accent-button large" id="newRunButton" type="button">▶ Run Playground dry-run</button>
           </div>
           <div class="selection-hint" id="setupSelectionHint"></div>
+        </section>
+
+        <section class="plain-panel pipeline-graph-panel">
+          <div class="panel-header-row">
+            <div>
+              <div class="section-eyebrow">Pipeline Graph</div>
+              <h2>Visual playbook builder</h2>
+            </div>
+            <div class="run-actions">
+              <button class="ghost-button" id="pipelineTestButton" type="button">◌ Test</button>
+              <button class="accent-button" id="pipelinePromoteButton" type="button">↑ Promote</button>
+            </div>
+          </div>
+          <div class="pipeline-version" id="pipelineVersionMeta"></div>
+          <div class="pipeline-canvas" id="pipelineCanvas"></div>
+          <div class="pipeline-gate-config" id="pipelineGateConfig"></div>
         </section>
 
         <div class="setup-workbench">
@@ -184,14 +259,14 @@
       <section class="workspace-panel" id="runsPanel" hidden>
         <section class="run-header">
           <div>
-            <div class="workspace-kicker">Selected run</div>
-            <h1 id="runTitle">Run details</h1>
+            <div class="workspace-kicker">Decision Room</div>
+            <h1 id="runTitle">Gate review</h1>
             <div class="workspace-meta" id="runMeta"></div>
           </div>
           <div class="run-actions">
-            <button class="ghost-button" id="attachContextButton" type="button">Attach context</button>
-            <button class="ghost-button" id="exportBriefButton" type="button">Export notes</button>
-            <button class="ghost-button" id="pauseRunButton" type="button">Pause</button>
+            <button class="ghost-button" id="backToWorkspaceButton" type="button">← Back to Workspace</button>
+            <button class="ghost-button" id="viewTraceButton" type="button">⌕ View trace</button>
+            <button class="ghost-button" id="pauseDecisionHeaderButton" type="button">⏸ Pause</button>
           </div>
         </section>
 
@@ -218,22 +293,23 @@
       <section class="workspace-panel" id="monitorPanel" hidden>
         <section class="run-header">
           <div>
-            <div class="workspace-kicker">Monitor</div>
-            <h1>Automation health</h1>
-            <div class="workspace-meta">Active runs, routing decisions, and items that need attention.</div>
+            <div class="workspace-kicker">Delivery</div>
+            <h1>All runs</h1>
+            <div class="workspace-meta">Bottlenecks, gate queues, and delivery movement across the system.</div>
+          </div>
+          <div class="run-actions">
+            <button class="ghost-button" id="deliveryKanbanButton" type="button">Kanban</button>
+            <button class="ghost-button" id="deliveryFilterButton" type="button">Filters</button>
           </div>
         </section>
         <div class="run-layout">
-          <section class="plain-panel">
-            <h2>Runs</h2>
-            <div class="run-board" id="runBoard"></div>
-          </section>
-          <section class="plain-panel">
-            <h2>Routing</h2>
-            <div class="trace-list" id="decisionTrace"></div>
-          </section>
           <section class="plain-panel span-2">
-            <h2>Needs attention</h2>
+            <h2>Run graph</h2>
+            <div class="delivery-board" id="runBoard"></div>
+          </section>
+          <section class="plain-panel">
+            <h2>Delivery insights</h2>
+            <div class="trace-list" id="decisionTrace"></div>
             <div class="heatmap-list" id="failureHeatmap"></div>
           </section>
         </div>
@@ -242,8 +318,8 @@
       <section class="workspace-panel" id="adminPanel" hidden>
         <section class="run-header">
             <div>
-            <div class="workspace-kicker">Admin</div>
-            <h1>Control plane admin</h1>
+            <div class="workspace-kicker">Connector Workshop</div>
+            <h1>Connectors</h1>
             <div class="workspace-meta" id="adminMeta"></div>
           </div>
           <div class="run-actions admin-toolbar">
@@ -351,6 +427,28 @@
             </div>
           </section>
         </div>
+      </section>
+
+      <section class="workspace-panel" id="intelligencePanel" hidden>
+        <section class="run-header">
+          <div>
+            <div class="workspace-kicker">Intelligence</div>
+            <h1>Delivery analytics</h1>
+            <div class="workspace-meta">Throughput, gate health, anomaly detection, and operational ROI.</div>
+          </div>
+        </section>
+        <div class="intelligence-grid" id="intelligenceGrid"></div>
+      </section>
+
+      <section class="workspace-panel" id="settingsPanel" hidden>
+        <section class="run-header">
+          <div>
+            <div class="workspace-kicker">Settings</div>
+            <h1>Team, environments, and integrations</h1>
+            <div class="workspace-meta">Operator context, persistence targets, permissions posture, and integration scope.</div>
+          </div>
+        </section>
+        <div class="settings-grid" id="settingsGrid"></div>
       </section>
     </main>
 
