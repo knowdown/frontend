@@ -691,12 +691,19 @@ function renderAuthStatus() {
     return;
   }
 
+  const displayName = user.name || `@${user.login || "unknown"}`;
+  const login = user.login ? `@${user.login}` : "";
+  const profileUrl = user.html_url || "https://github.com";
+
   mount.innerHTML = `
     <div class="auth-chip">
-      <img class="auth-chip-avatar" src="${escapeHtml(user.avatar_url || "")}" alt="${escapeHtml(user.login || "GitHub user")}" />
+      <a class="auth-chip-link" href="${escapeHtml(profileUrl)}" target="_blank" rel="noreferrer">
+        <img class="auth-chip-avatar" src="${escapeHtml(user.avatar_url || "")}" alt="${escapeHtml(user.login || "GitHub user")}" />
+      </a>
       <div class="auth-chip-copy">
-        <span class="auth-chip-label">Signed in</span>
-        <span class="auth-chip-value">@${escapeHtml(user.login || "unknown")}</span>
+        <span class="auth-chip-label">Signed in with GitHub</span>
+        <a class="auth-chip-value" href="${escapeHtml(profileUrl)}" target="_blank" rel="noreferrer">${escapeHtml(displayName)}</a>
+        <span class="auth-chip-handle">${escapeHtml(login)}</span>
       </div>
       <button class="ghost-button" id="authSignOutButton" type="button">Sign out</button>
     </div>

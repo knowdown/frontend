@@ -284,6 +284,11 @@ button {
   object-fit: cover;
 }
 
+.auth-chip-link {
+  display: inline-flex;
+  align-items: center;
+}
+
 .auth-chip-copy {
   display: flex;
   flex-direction: column;
@@ -303,6 +308,17 @@ button {
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.auth-chip-value:hover {
+  color: var(--blue);
+}
+
+.auth-chip-handle {
+  color: var(--muted);
+  font-size: 12px;
   line-height: 1.2;
 }
 
