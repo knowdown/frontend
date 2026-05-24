@@ -680,8 +680,34 @@ function setView(view) {
   renderHeader();
 }
 
+function renderAuthStatus() {
+  const mount = $("authStatus");
+  if (!mount) return;
+
+  const auth = window.KnockdownAuth;
+  const user = auth?.user;
+  if (!user) {
+    mount.innerHTML = "";
+    return;
+  }
+
+  mount.innerHTML = `
+    <div class="auth-chip">
+      <img class="auth-chip-avatar" src="${escapeHtml(user.avatar_url || "")}" alt="${escapeHtml(user.login || "GitHub user")}" />
+      <div class="auth-chip-copy">
+        <span class="auth-chip-label">Signed in</span>
+        <span class="auth-chip-value">@${escapeHtml(user.login || "unknown")}</span>
+      </div>
+      <button class="ghost-button" id="authSignOutButton" type="button">Sign out</button>
+    </div>
+  `;
+
+  $("authSignOutButton")?.addEventListener("click", () => auth.signOut(window.location.href));
+}
+
 function renderHeader() {
   $("launchRunButton").hidden = activeView === "admin";
+  renderAuthStatus();
 
   if (activeView === "setup") {
     const flow = activeFlow();
@@ -2693,6 +2719,7 @@ searchInput.addEventListener("input", (event) => {
 
 $("historyToggle").addEventListener("click", () => $("historyPanel").classList.toggle("open"));
 $("connectorToggle").addEventListener("click", () => $("connectorPanel").classList.toggle("open"));
+window.addEventListener("knockdown-auth-change", renderAuthStatus);
 
 renderAll();
 setView(activeView);

@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "index.html"
+      - "auth.js"
       - "app.css"
       - "app.js"
       - "app-data.js"
@@ -44,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp index.html app.css app.js app-data.js dist/
+          cp index.html auth.js app.css app.js app-data.js dist/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

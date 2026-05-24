@@ -70,6 +70,7 @@
           <button class="ghost-button" id="runsShortcut" type="button">Runs</button>
           <button class="ghost-button" id="monitorShortcut" type="button">Monitor</button>
           <button class="ghost-button" id="adminShortcut" type="button">Admin</button>
+          <div id="authStatus"></div>
           <button class="accent-button" id="launchRunButton" type="button">Start test run</button>
           <button class="mobile-toggle" id="connectorToggle" aria-label="Open details">
             <span></span>
@@ -390,6 +391,13 @@
     <button id="contextDiagnosticsButton" type="button"></button>
   </div>
 
+  <script>
+    window.KNOCKDOWN_AUTH_CONFIG = {
+      brokerUrl: "https://knowdown.github.io/orwell/",
+      requireApproval: false,
+    };
+  </script>
+  <script src="./auth.js"></script>
   <script src="./app-data.js"></script>
   <script src="./app.js"></script>
 </body>
