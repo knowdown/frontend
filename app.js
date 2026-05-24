@@ -705,7 +705,7 @@ function renderAuthStatus() {
         <a class="auth-chip-value" href="${escapeHtml(profileUrl)}" target="_blank" rel="noreferrer">${escapeHtml(displayName)}</a>
         <span class="auth-chip-handle">${escapeHtml(login)}</span>
       </div>
-      <button class="ghost-button" id="authSignOutButton" type="button">Sign out</button>
+      <button class="ghost-button" id="authSignOutButton" type="button">↩ Sign out</button>
     </div>
   `;
 
@@ -861,8 +861,8 @@ function renderSetup() {
 
   renderSelects();
 
-  $("newRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run Playground dry-run";
-  $("launchRunButton").textContent = flow ? `Run ${flow.name} dry-run` : "Run Playground dry-run";
+  $("newRunButton").textContent = flow ? `▶ Run ${flow.name} dry-run` : "▶ Run Playground dry-run";
+  $("launchRunButton").textContent = flow ? `▶ Run ${flow.name} dry-run` : "▶ Run Playground dry-run";
   $("setupSelectionHint").textContent = `${setupHint(flow, source, recommendedSource)} ${configDecision}`;
   $("setupStateBanner").innerHTML = `
     <strong>${escapeHtml(flow?.name || "Choose a workload")} with ${escapeHtml(source?.name || "a source")}</strong><br>
@@ -1531,7 +1531,7 @@ function renderAdmin() {
   $("adminConnectorDetailSections").hidden = isWorkflowEntity || !isDetailStage;
   $("adminWorkflowDetailSections").hidden = !isWorkflowEntity || !isDetailStage;
   $("createConnectorProfileButton").hidden = isWorkflowEntity;
-  $("backToConnectorCatalogButton").textContent = isWorkflowEntity ? "Back to workflows" : "Back to connectors";
+  $("backToConnectorCatalogButton").textContent = isWorkflowEntity ? "← Back to workflows" : "← Back to connectors";
   $("saveAdminChangesButton").hidden = !isEditMode || !isDetailStage;
 
   $("adminConnectorsScopeButton").classList.toggle("active", !isWorkflowEntity);
@@ -2129,10 +2129,10 @@ function renderAdmin() {
       </div>
     </div>
     <div class="persistence-actions">
-      <button class="accent-button" type="button" id="saveAllGithubButton">Save all to GitHub</button>
-      <button class="ghost-button" type="button" id="saveConfigGithubButton">Save connector config</button>
-      <button class="ghost-button" type="button" id="saveVariablesGithubButton">Save variables</button>
-      <button class="ghost-button" type="button" id="saveSecretsGithubButton">Save secrets</button>
+      <button class="accent-button" type="button" id="saveAllGithubButton">💾 Save all to GitHub</button>
+      <button class="ghost-button" type="button" id="saveConfigGithubButton">💾 Save connector config</button>
+      <button class="ghost-button" type="button" id="saveVariablesGithubButton">⬆ Save variables</button>
+      <button class="ghost-button" type="button" id="saveSecretsGithubButton">🔐 Save secrets</button>
     </div>
     <div class="persistence-callout">
       Connector config writes to <strong>${escapeHtml(profile.connectorFile || "the selected connector file")}</strong> in

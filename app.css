@@ -17,6 +17,8 @@
   --red-soft: #fce8e6;
   --shadow: 0 1px 2px rgba(31, 41, 55, 0.08), 0 8px 24px rgba(31, 41, 55, 0.06);
   --font: "Google Sans", "Inter", sans-serif;
+  --radius-button: 0.45rem;
+  --radius-panel: 0.75rem;
 }
 
 *,
@@ -31,6 +33,10 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
+}
+
+a {
+  color: inherit;
 }
 
 button,
@@ -113,7 +119,7 @@ button {
   min-height: 40px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   background: transparent;
   color: var(--text);
   text-align: left;
@@ -209,7 +215,7 @@ button {
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   background: var(--surface);
   color: var(--muted);
   font-size: 12px;
@@ -260,26 +266,30 @@ button {
 }
 
 #authStatus {
-  display: flex;
-  align-items: center;
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 15;
+  width: min(280px, calc(100vw - 36px));
 }
 
 .auth-chip {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;
-  min-height: 38px;
-  padding: 0 10px 0 8px;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(31, 41, 55, 0.06);
+  box-shadow: 0 12px 30px rgba(31, 41, 55, 0.14);
 }
 
 .auth-chip-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  border-radius: 0.65rem;
   background: var(--blue-soft);
   object-fit: cover;
 }
@@ -292,7 +302,7 @@ button {
 .auth-chip-copy {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -306,7 +316,7 @@ button {
 
 .auth-chip-value {
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
@@ -332,10 +342,12 @@ button {
 .accent-button {
   min-height: 38px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
+  box-shadow: none;
+  font-weight: 600;
 }
 
 .accent-button {
@@ -347,8 +359,20 @@ button {
 
 .accent-button.large {
   min-height: 54px;
-  border-radius: 12px;
+  border-radius: calc(var(--radius-button) + 0.05rem);
   padding-inline: 22px;
+}
+
+.ghost-button:hover,
+.accent-button:hover,
+.filter-chip:hover,
+.primary-nav:hover {
+  filter: brightness(0.98);
+}
+
+.ghost-button:active,
+.accent-button:active {
+  transform: translateY(1px);
 }
 
 .workspace-panel[hidden],
@@ -535,7 +559,7 @@ button {
   gap: 6px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
   background: #fbfcff;
 }
 
@@ -1015,9 +1039,10 @@ button {
   min-height: 72px;
   resize: vertical;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-panel);
   padding: 12px;
   color: var(--text);
+  background: var(--surface);
 }
 
 .monitor-row {
@@ -1182,7 +1207,7 @@ button {
 .policy-input {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-button);
   background: var(--surface);
   color: var(--text);
   padding: 10px 12px;
@@ -1275,7 +1300,7 @@ button {
 .config-preview {
   min-height: 220px;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
   background: #0f172a;
   color: #dbeafe;
   overflow: auto;
@@ -1306,7 +1331,7 @@ button {
   width: 38px;
   height: 38px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-button);
   background: var(--surface);
 }
 
@@ -1403,8 +1428,11 @@ button {
     display: none;
   }
 
-  .auth-chip-copy {
-    display: none;
+  #authStatus {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
   }
 
   .setup-hero h1,
@@ -1445,5 +1473,14 @@ button {
   .composer {
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .auth-chip {
+    grid-template-columns: auto 1fr;
+  }
+
+  .auth-chip button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }

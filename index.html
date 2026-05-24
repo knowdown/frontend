@@ -7,10 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link rel="stylesheet" href="./app.css">
 <script defer src="https://cdn.jsdelivr.net/npm/libsodium-wrappers-sumo@0.7.15/dist/modules-sumo/libsodium-wrappers.js"></script>
 </head>
-<body>
+<body data-theme="corporate">
   <div class="app-shell">
     <aside class="side-nav" id="historyPanel">
       <div class="brand-block">
@@ -71,7 +73,7 @@
           <button class="ghost-button" id="monitorShortcut" type="button">Monitor</button>
           <button class="ghost-button" id="adminShortcut" type="button">Admin</button>
           <div id="authStatus"></div>
-          <button class="accent-button" id="launchRunButton" type="button">Start test run</button>
+          <button class="accent-button" id="launchRunButton" type="button">▶ Start test run</button>
           <button class="mobile-toggle" id="connectorToggle" aria-label="Open details">
             <span></span>
             <span></span>
@@ -95,7 +97,7 @@
               <span>Source of record</span>
               <select id="sourceSelect"></select>
             </label>
-            <button class="accent-button large" id="newRunButton" type="button">Run Playground dry-run</button>
+            <button class="accent-button large" id="newRunButton" type="button">▶ Run Playground dry-run</button>
           </div>
           <div class="selection-hint" id="setupSelectionHint"></div>
         </section>
@@ -145,8 +147,8 @@
               </div>
             </div>
             <div class="setup-actions">
-              <button class="ghost-button" id="openSetupAdminButton" type="button">Edit selected config in Admin</button>
-              <button class="ghost-button" id="createSetupConfigButton" type="button">Create connector config</button>
+              <button class="ghost-button" id="openSetupAdminButton" type="button">✎ Edit selected config in Admin</button>
+              <button class="ghost-button" id="createSetupConfigButton" type="button">＋ Create connector config</button>
             </div>
           </section>
 
@@ -246,21 +248,21 @@
           </div>
           <div class="run-actions admin-toolbar">
             <div class="run-actions" id="adminCatalogActions">
-              <button class="ghost-button" id="createConnectorProfileButton" type="button">Create config</button>
-              <button class="ghost-button" id="resetAllAdminButton" type="button">Reset all local overrides</button>
+              <button class="ghost-button" id="createConnectorProfileButton" type="button">＋ Create config</button>
+              <button class="ghost-button" id="resetAllAdminButton" type="button">↺ Reset all local overrides</button>
             </div>
             <div class="run-actions" id="adminDetailActions" hidden>
-              <button class="ghost-button" id="backToConnectorCatalogButton" type="button">Back to connectors</button>
-              <button class="accent-button" id="saveAdminChangesButton" type="button">Save and view</button>
-              <button class="ghost-button" id="cancelConnectorChangesButton" type="button">Cancel changes</button>
+              <button class="ghost-button" id="backToConnectorCatalogButton" type="button">← Back to connectors</button>
+              <button class="accent-button" id="saveAdminChangesButton" type="button">💾 Save and view</button>
+              <button class="ghost-button" id="cancelConnectorChangesButton" type="button">✕ Cancel changes</button>
             </div>
             <div class="admin-mode-switch" id="adminModeSwitch" hidden>
               <button class="ghost-button" id="adminViewModeButton" type="button">Read only</button>
               <button class="ghost-button" id="adminEditModeButton" type="button">Edit mode</button>
             </div>
             <div class="run-actions" id="adminEditActions" hidden>
-              <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">Duplicate selected</button>
-              <button class="ghost-button" id="resetConnectorButton" type="button">Reset connector</button>
+              <button class="ghost-button" id="duplicateConnectorProfileButton" type="button">⧉ Duplicate selected</button>
+              <button class="ghost-button" id="resetConnectorButton" type="button">↺ Reset connector</button>
             </div>
           </div>
         </section>
